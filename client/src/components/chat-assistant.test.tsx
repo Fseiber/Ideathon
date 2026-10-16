@@ -87,4 +87,18 @@ describe("ChatAssistant", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     await waitFor(() => expect(sendChat).toHaveBeenCalledTimes(1));
   });
+
+  it("starts a fresh chat context after a quote", async () => {
+    vi.mocked(sendChat).mockResolvedValueOnce({ reply: "Cotización", order, agent: "stub" }).mockResolvedValueOnce({ reply: "Nueva cotización", order: null, agent: "stub" });
+    renderAssistant();
+    fireEvent.click(screen.getByRole("button", { name: "Abrir" }));
+    const input = await screen.findByPlaceholderText(/20 toneladas/);
+    fireEvent.change(input, { target: { value: "20 tn para Asunción CFR" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(sendChat).toHaveBeenCalledTimes(1));
+    fireEvent.change(await screen.findByPlaceholderText(/20 toneladas/), { target: { value: "50 tn para Brasil FOB" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
+    await waitFor(() => expect(sendChat).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(sendChat).mock.calls[1]?.[0]).toEqual([{ role: "user", content: "50 tn para Brasil FOB" }]);
+  });
 });

@@ -10,6 +10,7 @@ export function QuoteCard({ order }: { order: ApiOrder }) {
   return (
     <Card className="mt-3 border-primary/30 bg-primary/5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2"><h3 className="text-sm font-semibold">Cotización #{order.id}</h3><StatusBadge tono="success">Testnet</StatusBadge></div>
+      <p className="mb-2 text-xs font-medium text-muted-foreground">Lote #{order.lotId}</p>
       <dl className="space-y-2 text-sm">
         <Row label="Toneladas" value={`${order.tons} tn ARROZ`} />
         <Row label="Precio por tn" value={fmtUsd(order.pricePerTonCents)} />

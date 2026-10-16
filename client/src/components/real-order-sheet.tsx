@@ -10,6 +10,7 @@ import { useAppStore } from "@/lib/store";
 import { Card, StatusBadge } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { EscrowTracker } from "@/components/escrow-tracker";
 
 type Props = { order: ApiOrder; open: boolean; onOpenChange: (open: boolean) => void };
 type MutationInput = { action: "fund" | "dispatch" | "confirm"; id: string };
@@ -51,6 +52,7 @@ export function RealOrderSheet({ order, open, onOpenChange }: Props) {
 
   return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent className="w-full overflow-y-auto sm:max-w-xl"><SheetHeader><SheetTitle>Orden #{order.id}</SheetTitle><SheetDescription>{order.tons} tn ARROZ · {order.destination} · {order.incoterm}</SheetDescription></SheetHeader><div className="mt-5 space-y-6">
     <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4"><Money label="Subtotal" cents={order.subtotalCents} /><Money label="Flete" cents={order.freightCents} /><Money label="Total" cents={order.totalCents} /><Money label="Anticipo 30%" cents={order.advanceCents} /><Money label="Saldo" cents={order.balanceCents} /></div>
+    <EscrowTracker order={order} />
     <p className="text-xs text-muted-foreground">Escrow custodial operado por la plataforma. USDC y ARROZ son activos de prueba emitidos por la plataforma en Stellar testnet (no es USDC de Circle). Firma del comprador con billetera propia, multifirma y Soroban: hoja de ruta.</p>
     <div><h3 className="mb-3 text-sm font-semibold">Flujo de la orden</h3><ol className="relative space-y-5 border-l-2 border-border pl-6">{FLOW_STEPS.map((step, index) => <li key={step.status} className="relative"><span className={`absolute -left-[33px] flex h-5 w-5 items-center justify-center rounded-full border-2 ${index <= currentStep ? "border-success bg-success text-success-foreground" : "border-border bg-card"}`}>{index <= currentStep && <Check className="h-3 w-3" />}</span><p className={index <= currentStep ? "text-sm font-semibold" : "text-sm text-muted-foreground"}>{step.label}</p><div className="mt-2 space-y-2">{eventsForStep(events, step.status).map((event) => <EventRow key={`${event.type}-${event.createdAt}`} event={event} />)}</div></li>)}</ol></div>
     <div className="space-y-2">{action ? <><Button className="w-full" disabled={!action.allowed || mutation.isPending} onClick={() => runAction(action.action)}>{mutation.isPending ? "Firmando en Stellar testnet…" : action.label.replace("USDC", "USDC de prueba")}</Button>{!action.allowed && <p className="text-sm text-muted-foreground">{action.reason}</p>}{mutationMessage && <p className="text-sm text-destructive">{mutationMessage}</p>}</> : order.status === "PROCESANDO" ? <p className="flex items-center justify-center gap-2 text-sm text-muted-foreground">Procesando en la red…</p> : <Button variant="outline" className="w-full" asChild><a href={`/trazabilidad?op=api:${order.id}`}>Ver verificación blockchain</a></Button>}</div>

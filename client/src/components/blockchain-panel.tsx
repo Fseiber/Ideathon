@@ -6,6 +6,7 @@ import { ApiError, centsToUsd, getHealth, sealOrder, shortHash, verifyOrder, typ
 import { EVENT_LABEL, eventLink, sortEvents, STATUS_LABEL } from "@/lib/order-view";
 import { Card, StatusBadge } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
+import { EscrowTracker } from "@/components/escrow-tracker";
 
 type Verification = { valid: boolean; hash: string; sealedHash: string; onChain: boolean | null };
 
@@ -70,6 +71,8 @@ export function BlockchainPanel({ order }: { order: ApiOrder }) {
           <Summary label="Saldo" value={fmtUsd(order.balanceCents)} />
         </div>
       </Card>
+
+      <EscrowTracker order={order} />
 
       <Card>
         <h3 className="mb-4 flex items-center gap-2 text-base font-semibold"><Fingerprint className="h-5 w-5 text-info" />Historial blockchain</h3>

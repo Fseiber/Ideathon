@@ -155,4 +155,4 @@ export const dispatchOrder = (id: string) => api<ApiOrder>(`/orders/${id}/dispat
 export const confirmDelivery = (id: string) => api<ApiOrder>(`/orders/${id}/confirm-delivery`, { method: "POST", party: 2 });
 export const sealOrder = (id: string) => api<ApiOrder>(`/orders/${id}/seal`, { method: "POST" });
 export const getLots = () => api<ApiLot[]>("/lots");
-export const sendChat = (messages: ChatMessage[]) => api<ChatResponse>("/chat", { method: "POST", party: 2, body: { messages } });
+export const sendChat = (messages: ChatMessage[], lotId?: number) => api<ChatResponse>("/chat", { method: "POST", party: 2, body: { messages, ...(lotId ? { lotId } : {}) } });

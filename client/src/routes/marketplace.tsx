@@ -84,7 +84,7 @@ function Marketplace() {
       <section className="mb-8">
         <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Lotes tokenizados (testnet)</h2><StatusBadge tono="success">Testnet · En vivo</StatusBadge></div>
         <p className="mb-3 text-sm text-muted-foreground">El asistente asigna el lote disponible del molino; precio fijado por el sistema.</p>
-        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{lotsQuery.data?.filter((lot) => lot.tonsAvailable > 0).map((lot) => <LotCard key={lot.id} lot={lot} action={<Button size="sm" onClick={() => openChat(`Quiero cotizar arroz del lote #${lot.id}: ___ toneladas para ___, FOB o CFR`)}>Pedir cotización</Button>} />)}{lotsQuery.data && lotsQuery.data.filter((lot) => lot.tonsAvailable > 0).length === 0 && !lotsQuery.isError && <Card><p className="text-sm text-muted-foreground">No hay lotes tokenizados disponibles.</p></Card>}</div>
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{lotsQuery.data?.filter((lot) => lot.tonsAvailable > 0).map((lot) => <LotCard key={lot.id} lot={lot} action={<Button size="sm" onClick={() => openChat(`Quiero cotizar el lote #${lot.id}: `, lot.id)}>Pedir cotización</Button>} />)}{lotsQuery.data && lotsQuery.data.filter((lot) => lot.tonsAvailable > 0).length === 0 && !lotsQuery.isError && <Card><p className="text-sm text-muted-foreground">No hay lotes tokenizados disponibles.</p></Card>}</div>
       </section>
       <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Marketplace de ejemplo (demo)</h2><DemoBadge /></div>
       {!showDemo && <Button variant="ghost" size="sm" onClick={() => setShowDemo(true)}>Ver lotes de ejemplo (demo)</Button>}

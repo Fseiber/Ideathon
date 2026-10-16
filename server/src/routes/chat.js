@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AppError } from '../utils/errors.js';
+import { integerId } from '../utils/validate.js';
 import { handleChat } from '../services/chatService.js';
 
 function validateMessages(messages) {
@@ -12,6 +13,6 @@ function validateMessages(messages) {
 
 export function chatRouter(prisma) {
   const router = Router();
-  router.post('/', async (req, res, next) => { try { if (req.party.role !== 'COMPRADOR') throw new AppError('FORBIDDEN', 'Sólo el comprador puede usar el chat', 403); validateMessages(req.body?.messages); res.json(await handleChat({ buyerId: req.party.id, messages: req.body.messages }, { prisma })); } catch (error) { next(error); } });
+  router.post('/', async (req, res, next) => { try { if (req.party.role !== 'COMPRADOR') throw new AppError('FORBIDDEN', 'Sólo el comprador puede usar el chat', 403); validateMessages(req.body?.messages); const lotId = req.body?.lotId === undefined ? undefined : integerId(req.body.lotId, 'lotId'); res.json(await handleChat({ buyerId: req.party.id, messages: req.body.messages, lotId }, { prisma })); } catch (error) { next(error); } });
   return router;
 }

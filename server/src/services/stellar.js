@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { randomBytes } from 'node:crypto';
 import { Asset, Horizon, Keypair, Memo, Networks, Operation, TransactionBuilder } from '@stellar/stellar-sdk';
 import { AppError } from '../utils/errors.js';
+import { submitIdempotent, TX_TIMEOUT_S } from '../utils/stellarIdempotency.js';
 dotenv.config();
 
 const mode = process.env.STELLAR_MODE || 'mock';
@@ -24,15 +25,16 @@ export async function sendUsdc({ fromSecret, toPublicKey, amountCents, memo }) {
   }
   try {
     const source = Keypair.fromSecret(fromSecret);
-    const account = await server.loadAccount(source.publicKey());
-    const asset = new Asset('USDC', process.env.STELLAR_ISSUER_PUBLIC);
-    const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
-      .addOperation(Operation.payment({ destination: toPublicKey, asset, amount: (amountCents / 100).toFixed(2) }))
-      .addMemo(Memo.text(memo))
-      .setTimeout(30).build();
-    tx.sign(source);
-    const result = await server.submitTransaction(tx);
-    return { txHash: result.hash };
+    const result = await submitIdempotent({ horizon: server, sourcePublicKey: source.publicKey(), memo, buildAndSign: async () => {
+      const account = await server.loadAccount(source.publicKey());
+      const asset = new Asset('USDC', process.env.STELLAR_ISSUER_PUBLIC);
+      const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
+        .addOperation(Operation.payment({ destination: toPublicKey, asset, amount: (amountCents / 100).toFixed(2) }))
+        .addMemo(Memo.text(memo)).setTimeout(TX_TIMEOUT_S).build();
+      tx.sign(source);
+      return tx;
+    } });
+    return result;
   } catch (error) { if (error instanceof AppError) throw error; throw new AppError('STELLAR_ERROR', 'Error en la red Stellar', 502); }
 }
 export async function mintArroz({ toPublicKey, tons }) {
@@ -52,28 +54,32 @@ export async function sendArroz({ fromSecret, toPublicKey, tons, memo }) {
   if (getStellarMode() === 'mock') return mockTransaction();
   try {
     const source = Keypair.fromSecret(fromSecret);
-    const account = await server.loadAccount(source.publicKey());
-    const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
-      .addOperation(Operation.payment({ destination: toPublicKey, asset: arrozAsset(), amount: tons.toFixed(7) }))
-      .addMemo(Memo.text(memo)).setTimeout(30).build();
-    tx.sign(source);
-    const result = await server.submitTransaction(tx);
-    return { txHash: result.hash };
+    const result = await submitIdempotent({ horizon: server, sourcePublicKey: source.publicKey(), memo, buildAndSign: async () => {
+      const account = await server.loadAccount(source.publicKey());
+      const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
+        .addOperation(Operation.payment({ destination: toPublicKey, asset: arrozAsset(), amount: tons.toFixed(7) }))
+        .addMemo(Memo.text(memo)).setTimeout(TX_TIMEOUT_S).build();
+      tx.sign(source);
+      return tx;
+    } });
+    return result;
   } catch (error) { throw error instanceof AppError ? error : new AppError('STELLAR_ERROR', 'Error en la red Stellar', 502); }
 }
 export async function settleDvP({ memo, usdcCents, usdcTo, arrozTons, arrozTo }) {
   if (getStellarMode() === 'mock') return mockTransaction();
   try {
     const escrow = Keypair.fromSecret(process.env.STELLAR_ESCROW_SECRET);
-    const account = await server.loadAccount(escrow.publicKey());
-    const usdc = new Asset('USDC', process.env.STELLAR_ISSUER_PUBLIC);
-    const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
-      .addOperation(Operation.payment({ destination: usdcTo, asset: usdc, amount: (usdcCents / 100).toFixed(2) }))
-      .addOperation(Operation.payment({ destination: arrozTo, asset: arrozAsset(), amount: arrozTons.toFixed(7) }))
-      .addMemo(Memo.text(memo)).setTimeout(30).build();
-    tx.sign(escrow);
-    const result = await server.submitTransaction(tx);
-    return { txHash: result.hash };
+    const result = await submitIdempotent({ horizon: server, sourcePublicKey: escrow.publicKey(), memo, buildAndSign: async () => {
+      const account = await server.loadAccount(escrow.publicKey());
+      const usdc = new Asset('USDC', process.env.STELLAR_ISSUER_PUBLIC);
+      const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
+        .addOperation(Operation.payment({ destination: usdcTo, asset: usdc, amount: (usdcCents / 100).toFixed(2) }))
+        .addOperation(Operation.payment({ destination: arrozTo, asset: arrozAsset(), amount: arrozTons.toFixed(7) }))
+        .addMemo(Memo.text(memo)).setTimeout(TX_TIMEOUT_S).build();
+      tx.sign(escrow);
+      return tx;
+    } });
+    return result;
   } catch (error) { throw error instanceof AppError ? error : new AppError('STELLAR_ERROR', 'Error en la red Stellar', 502); }
 }
 export const explorerUrl = (hash) => hash ? `https://stellar.expert/explorer/testnet/tx/${hash}` : null;

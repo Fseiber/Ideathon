@@ -229,9 +229,12 @@ Body: entre 1 y 30 mensajes; cada `role` es `user` o `assistant`, cada `content`
 
 ```json
 {
-  "messages": [{ "role": "user", "content": "Necesito 20 toneladas para Asunción, CFR" }]
+  "messages": [{ "role": "user", "content": "Necesito 20 toneladas para Asunción, CFR" }],
+  "lotId": 2
 }
 ```
+
+`lotId` es opcional y debe ser un entero positivo. Si se envía, la cotización y la orden usan exclusivamente ese lote y su precio; sin `lotId`, se conserva la selección automática del primer lote del molino con stock.
 
 Respuesta cuando crea una cotización: `{ "reply": "...", "order": { "...": "orden serializada" }, "agent": "stub" }`. `agent` puede ser `stub` o `gemini`. Si faltan datos, `order` es `null`.
 

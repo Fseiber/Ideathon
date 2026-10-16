@@ -52,8 +52,8 @@ describe("BlockchainPanel", () => {
 
   it("renders backend cent amounts as USD", () => {
     renderPanel();
-    expect(screen.getByText(/13\.500|13,500/)).toBeInTheDocument();
-    expect(screen.getByText(/9\.450|9,450/)).toBeInTheDocument();
+    expect(screen.getAllByText(/13\.500|13,500/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/9\.450|9,450/).length).toBeGreaterThan(0);
   });
 
   it("hides Hedera when health reports it off", async () => {
