@@ -30,7 +30,9 @@ model Lot {
   tonsAvailable Int
   mintTxHash String?
   createdAt DateTime @default(now())
+  supplierCompanyId Int?
   mill Party @relation(fields: [millId], references: [id])
+  supplier Company? @relation("SupplierLots", fields: [supplierCompanyId], references: [id])
   orders Order[]
 }
 
@@ -77,4 +79,60 @@ model OrderEvent {
   note String?
   createdAt DateTime @default(now())
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  email String @unique
+  name String
+  passwordHash String
+  roles String // CSV: ADMIN,COMEX,DOCS,FINANCE
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  audits AuditEvent[]
+}
+
+model Session {
+  id Int @id @default(autoincrement())
+  tokenHash String @unique
+  userId Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id Int @id @default(autoincrement())
+  name String
+  taxId String?
+  country String
+  province String?
+  roles String // CSV: MOLINO,COMPRADOR,EXPORTADOR,INTERMEDIARIO
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contacts CompanyContact[]
+  lots Lot[] @relation("SupplierLots")
+}
+
+model CompanyContact {
+  id Int @id @default(autoincrement())
+  companyId Int
+  name String
+  email String?
+  phone String?
+  position String?
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id Int @id @default(autoincrement())
+  userId Int?
+  action String
+  entity String
+  entityId String
+  data String?
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
 }

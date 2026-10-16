@@ -119,6 +119,7 @@ export interface ApiLot {
   mintTxHash: string;
   explorerUrl: string | null;
   createdAt: string;
+  supplier?: { id: number; name: string };
 }
 
 export type LotAttributes = { variety?: string; province?: string; presentation?: string; brokenPct?: number; moisturePct?: number; pricePerTonUsd?: number };

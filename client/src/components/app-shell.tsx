@@ -34,6 +34,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { useChatAssistant } from "@/components/chat-assistant";
+import { ComexNav } from "@/components/comex/comex-nav";
 
 type NavLink = { to: string; label: string; icon: LucideIcon; demo?: boolean };
 type NavModule = { titulo: string; items: NavLink[]; asistente?: boolean };
@@ -69,7 +70,7 @@ const NAV_MODULES: NavModule[] = [
 ];
 
 const DASHBOARD: NavLink = { to: "/", label: "Dashboard", icon: LayoutDashboard };
-const MOBILE_NAV: NavLink[] = [DASHBOARD, ...NAV_MODULES.flatMap((m) => m.items)];
+const MOBILE_NAV: NavLink[] = [DASHBOARD, ...NAV_MODULES.flatMap((m) => m.items), { to: "/comex/empresas", label: "Empresas", icon: Building2 }];
 
 function isActive(to: string, pathname: string) {
   return to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -116,6 +117,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
               {modulo.asistente && <AssistantNavItem open={open} />}
             </div>
           ))}
+          <ComexNav pathname={location.pathname} />
           <div className="pt-3">
             <NavItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} pathname={location.pathname} />
           </div>
