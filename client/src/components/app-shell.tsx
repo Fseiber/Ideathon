@@ -71,7 +71,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-sidebar text-sidebar-foreground lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-sidebar text-sidebar-foreground print:hidden lg:flex">
         <div className="flex items-center gap-3 px-5 py-5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
             <Sprout className="h-5 w-5 text-sidebar-primary-foreground" />
@@ -113,7 +113,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
       {/* Contenido */}
       <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 print:hidden lg:px-6">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
             <Sprout className="h-5 w-5 text-primary" />
              <span className="font-display text-sm font-bold">AgroFlow</span>
@@ -166,7 +166,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
         </header>
 
         {/* Nav móvil */}
-        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-card px-3 py-2 lg:hidden">
+        <nav className="flex gap-1 overflow-x-auto border-b border-border bg-card px-3 py-2 print:hidden lg:hidden">
            {PRIMARY_NAV.slice(0, 3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", (to === "/" ? location.pathname === "/" : location.pathname.startsWith(to)) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}<button onClick={() => open()} className="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent"><MessageSquare className="h-3.5 w-3.5" />Asistente IA</button>{PRIMARY_NAV.slice(3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", location.pathname.startsWith(to) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}
         </nav>
 

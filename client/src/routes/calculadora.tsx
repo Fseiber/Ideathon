@@ -11,10 +11,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/calculadora")({
-  validateSearch: (s: Record<string, unknown>): { lote?: string; solicitud?: string } => ({
-    lote: typeof s.lote === "string" ? s.lote : undefined,
-    solicitud: typeof s.solicitud === "string" ? s.solicitud : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { lote?: string; solicitud?: string } => {
+    const out: { lote?: string; solicitud?: string } = {};
+    if (typeof s["lote"] === "string") out.lote = s["lote"];
+    if (typeof s["solicitud"] === "string") out.solicitud = s["solicitud"];
+    return out;
+  },
   head: () =>
     pageHead(
       "Calculadora COMEX",
@@ -246,6 +248,7 @@ function TipoDatoBadge({ tipo }: { tipo: string }) {
     verificado: { label: "Verificado", cls: "bg-success-muted text-success" },
     pendiente: { label: "Pendiente de verificación", cls: "bg-warning-muted text-warning-foreground" },
   };
-  const m = map[tipo] ?? map.estimado;
+  const m = map[tipo] ?? map["estimado"];
+  if (!m) return null;
   return <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-semibold", m.cls)}>{m.label}</span>;
 }

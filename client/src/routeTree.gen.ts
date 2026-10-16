@@ -21,6 +21,8 @@ import { Route as MisProductosRouteImport } from './routes/mis-productos'
 import { Route as OperacionesRouteImport } from './routes/operaciones'
 import { Route as SolicitudesRouteImport } from './routes/solicitudes'
 import { Route as TrazabilidadRouteImport } from './routes/trazabilidad'
+import { Route as ComprobanteIdRouteImport } from './routes/comprobante.$id'
+import { Route as LotesIdRouteImport } from './routes/lotes.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +84,16 @@ const TrazabilidadRoute = TrazabilidadRouteImport.update({
   path: '/trazabilidad',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComprobanteIdRoute = ComprobanteIdRouteImport.update({
+  id: '/comprobante/$id',
+  path: '/comprobante/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LotesIdRoute = LotesIdRouteImport.update({
+  id: '/lotes/$id',
+  path: '/lotes/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/operaciones': typeof OperacionesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/trazabilidad': typeof TrazabilidadRoute
+  '/comprobante/$id': typeof ComprobanteIdRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/operaciones': typeof OperacionesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/trazabilidad': typeof TrazabilidadRoute
+  '/comprobante/$id': typeof ComprobanteIdRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,8 @@ export interface FileRoutesById {
   '/operaciones': typeof OperacionesRoute
   '/solicitudes': typeof SolicitudesRoute
   '/trazabilidad': typeof TrazabilidadRoute
+  '/comprobante/$id': typeof ComprobanteIdRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +159,8 @@ export interface FileRouteTypes {
     | '/operaciones'
     | '/solicitudes'
     | '/trazabilidad'
+    | '/comprobante/$id'
+    | '/lotes/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +175,8 @@ export interface FileRouteTypes {
     | '/operaciones'
     | '/solicitudes'
     | '/trazabilidad'
+    | '/comprobante/$id'
+    | '/lotes/$id'
   id:
     | '__root__'
     | '/'
@@ -169,6 +191,8 @@ export interface FileRouteTypes {
     | '/operaciones'
     | '/solicitudes'
     | '/trazabilidad'
+    | '/comprobante/$id'
+    | '/lotes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +208,8 @@ export interface RootRouteChildren {
   OperacionesRoute: typeof OperacionesRoute
   SolicitudesRoute: typeof SolicitudesRoute
   TrazabilidadRoute: typeof TrazabilidadRoute
+  ComprobanteIdRoute: typeof ComprobanteIdRoute
+  LotesIdRoute: typeof LotesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrazabilidadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comprobante/$id': {
+      id: '/comprobante/$id'
+      path: '/comprobante/$id'
+      fullPath: '/comprobante/$id'
+      preLoaderRoute: typeof ComprobanteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lotes/$id': {
+      id: '/lotes/$id'
+      path: '/lotes/$id'
+      fullPath: '/lotes/$id'
+      preLoaderRoute: typeof LotesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,6 +328,8 @@ const rootRouteChildren: RootRouteChildren = {
   OperacionesRoute: OperacionesRoute,
   SolicitudesRoute: SolicitudesRoute,
   TrazabilidadRoute: TrazabilidadRoute,
+  ComprobanteIdRoute: ComprobanteIdRoute,
+  LotesIdRoute: LotesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

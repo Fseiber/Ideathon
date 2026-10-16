@@ -32,10 +32,11 @@ function Documentacion() {
   const verificados = aplicables.filter((d) => d.estado === "Verificado").length;
   const avance = aplicables.length ? Math.round((verificados / aplicables.length) * 100) : 0;
 
-  const siguiente = (d: DocumentoRequerido) => {
+  const siguiente = (d: Pick<DocumentoRequerido, "id" | "estado">) => {
     const orden: DocumentoRequerido["estado"][] = ["Pendiente", "En preparación", "Presentado", "Verificado"];
     const i = orden.indexOf(d.estado);
-    if (i >= 0 && i < orden.length - 1) setEstados((s) => ({ ...s, [d.id]: orden[i + 1] }));
+    const siguienteEstado = orden[i + 1];
+    if (i >= 0 && siguienteEstado) setEstados((s) => ({ ...s, [d.id]: siguienteEstado }));
   };
 
   return (

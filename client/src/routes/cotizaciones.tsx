@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/cotizaciones")({
-  validateSearch: (s: Record<string, unknown>): { ver?: string } => ({
-    ver: typeof s.ver === "string" ? s.ver : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { ver?: string } => {
+    const out: { ver?: string } = {};
+    if (typeof s["ver"] === "string") out.ver = s["ver"];
+    return out;
+  },
   head: () =>
     pageHead(
       "Cotizaciones",

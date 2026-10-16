@@ -127,6 +127,7 @@ export function BlockchainPanel({ order }: { order: ApiOrder }) {
           </div>
         ) : <p className="text-sm text-muted-foreground">Se sella al completar la liquidación</p>}
       </Card>}
+      {order.status === "COMPLETADA" && <Button variant="outline" asChild><a href={`/comprobante/${order.id}`}>Ver comprobante</a></Button>}
 
       {health?.issuerPublic && health.escrowPublic && <Card>
         <h3 className="mb-3 text-base font-semibold">Cuentas en Stellar testnet</h3>

@@ -146,7 +146,7 @@ export function simular(conceptos: ConceptoCosto[], params: ParametrosSimulacion
       .filter((c) => c.grupo === "A. Mercadería" && !c.incluidoEnOtraTarifa)
       .reduce((acc, c) => acc + costoConceptoUsd(c, params, 0), 0) || params.cantidadTn * 500;
 
-  const gruposVendedor = GRUPOS_VENDEDOR_POR_INCOTERM[params.incoterm] ?? GRUPOS_VENDEDOR_POR_INCOTERM.FOB;
+  const gruposVendedor = GRUPOS_VENDEDOR_POR_INCOTERM[params.incoterm] ?? GRUPOS_VENDEDOR_POR_INCOTERM["FOB"] ?? [];
 
   const porGrupo = GRUPOS_COSTO_DESDE("A", "F").map((grupo) => {
     const items = conceptos.filter((c) => c.grupo === grupo);
@@ -172,8 +172,8 @@ export function simular(conceptos: ConceptoCosto[], params: ParametrosSimulacion
     porGrupo.filter((g) => grupos.includes(g.grupo) || g.grupo === "F. Gastos comerciales y financieros").reduce((a, g) => a + g.totalUsd, 0) /
     Math.max(params.cantidadTn, 1);
 
-  const fob = costoHasta(GRUPOS_VENDEDOR_POR_INCOTERM.FOB) * (1 + params.margenPct / 100);
-  const cfr = costoHasta(GRUPOS_VENDEDOR_POR_INCOTERM.CFR.filter((g) => g !== "E. Transporte internacional" || true)) * (1 + params.margenPct / 100);
+  const fob = costoHasta(GRUPOS_VENDEDOR_POR_INCOTERM["FOB"] ?? []) * (1 + params.margenPct / 100);
+  const cfr = costoHasta((GRUPOS_VENDEDOR_POR_INCOTERM["CFR"] ?? []).filter((g) => g !== "E. Transporte internacional" || true)) * (1 + params.margenPct / 100);
   const cif = cfr; // seguro internacional incluido en E
 
   const pendientesVerificacion = conceptos.filter((c) => c.tipoDato === "pendiente").map((c) => c.concepto);

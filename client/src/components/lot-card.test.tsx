@@ -16,4 +16,9 @@ describe("LotCard", () => {
     render(<LotCard lot={{ ...lot, explorerUrl: null }} />);
     expect(screen.queryByText("Ver emisión")).not.toBeInTheDocument();
   });
+
+  it("links to the digital passport", () => {
+    render(<LotCard lot={lot} />);
+    expect(screen.getByRole("link", { name: "Ver pasaporte" })).toHaveAttribute("href", "/lotes/7");
+  });
 });
