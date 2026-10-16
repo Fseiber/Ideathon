@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BienvenidaRouteImport } from './routes/bienvenida'
 import { Route as CalculadoraRouteImport } from './routes/calculadora'
 import { Route as ConciliacionRouteImport } from './routes/conciliacion'
 import { Route as ConfiguracionRouteImport } from './routes/configuracion'
@@ -27,6 +28,11 @@ import { Route as LotesIdRouteImport } from './routes/lotes.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BienvenidaRoute = BienvenidaRouteImport.update({
+  id: '/bienvenida',
+  path: '/bienvenida',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalculadoraRoute = CalculadoraRouteImport.update({
@@ -97,6 +103,7 @@ const LotesIdRoute = LotesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bienvenida': typeof BienvenidaRoute
   '/calculadora': typeof CalculadoraRoute
   '/conciliacion': typeof ConciliacionRoute
   '/configuracion': typeof ConfiguracionRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bienvenida': typeof BienvenidaRoute
   '/calculadora': typeof CalculadoraRoute
   '/conciliacion': typeof ConciliacionRoute
   '/configuracion': typeof ConfiguracionRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/bienvenida': typeof BienvenidaRoute
   '/calculadora': typeof CalculadoraRoute
   '/conciliacion': typeof ConciliacionRoute
   '/configuracion': typeof ConfiguracionRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bienvenida'
     | '/calculadora'
     | '/conciliacion'
     | '/configuracion'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bienvenida'
     | '/calculadora'
     | '/conciliacion'
     | '/configuracion'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/bienvenida'
     | '/calculadora'
     | '/conciliacion'
     | '/configuracion'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BienvenidaRoute: typeof BienvenidaRoute
   CalculadoraRoute: typeof CalculadoraRoute
   ConciliacionRoute: typeof ConciliacionRoute
   ConfiguracionRoute: typeof ConfiguracionRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bienvenida': {
+      id: '/bienvenida'
+      path: '/bienvenida'
+      fullPath: '/bienvenida'
+      preLoaderRoute: typeof BienvenidaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calculadora': {
@@ -317,6 +337,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BienvenidaRoute: BienvenidaRoute,
   CalculadoraRoute: CalculadoraRoute,
   ConciliacionRoute: ConciliacionRoute,
   ConfiguracionRoute: ConfiguracionRoute,
