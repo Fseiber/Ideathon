@@ -39,6 +39,7 @@ before(async () => {
 });
 
 beforeEach(async () => {
+  await prisma.purchaseRequest.deleteMany();
   await prisma.auditEvent.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();
@@ -52,6 +53,7 @@ beforeEach(async () => {
 });
 
 after(async () => {
+  await prisma.purchaseRequest.deleteMany();
   await prisma.auditEvent.deleteMany();
   await prisma.session.deleteMany();
   await prisma.user.deleteMany();

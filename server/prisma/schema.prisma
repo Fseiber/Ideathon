@@ -91,6 +91,7 @@ model User {
   createdAt DateTime @default(now())
   sessions Session[]
   audits AuditEvent[]
+  purchaseRequests PurchaseRequest[]
 }
 
 model Session {
@@ -114,6 +115,7 @@ model Company {
   updatedAt DateTime @updatedAt
   contacts CompanyContact[]
   lots Lot[] @relation("SupplierLots")
+  purchaseRequests PurchaseRequest[]
 }
 
 model CompanyContact {
@@ -135,4 +137,29 @@ model AuditEvent {
   data String?
   createdAt DateTime @default(now())
   user User? @relation(fields: [userId], references: [id])
+}
+
+model PurchaseRequest {
+  id Int @id @default(autoincrement())
+  buyerCompanyId Int
+  product String @default("Arroz")
+  variety String
+  tons Int
+  maxBrokenPct Float?
+  maxMoisturePct Float?
+  presentation String?
+  destination String
+  incoterm String // FOB | CFR
+  requiredBy DateTime?
+  certifications String?
+  status String @default("ABIERTA") // ABIERTA, EN_ANALISIS, COTIZADA, CERRADA, CANCELADA
+  notes String?
+  createdById Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  buyer Company @relation(fields: [buyerCompanyId], references: [id])
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([buyerCompanyId])
 }

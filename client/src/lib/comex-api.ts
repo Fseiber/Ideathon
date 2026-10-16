@@ -1,4 +1,5 @@
 import { ApiError } from "./api";
+import type { MatchResult } from "./lot-matching";
 
 // Cliente de /api/auth y /api/comex: autenticación por Bearer token (usuarios internos),
 // independiente del header x-party-id del flujo Stellar. El token nunca se loguea.
@@ -16,7 +17,19 @@ export interface ContactInput { name: string; email?: string | null; phone?: str
 export interface NewUserInput { email: string; name: string; password: string; roles: UserRole[] }
 export interface LoginResponse { token: string; user: ComexUser }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+export type RequestStatus = "ABIERTA" | "EN_ANALISIS" | "COTIZADA" | "CERRADA" | "CANCELADA";
+export const REQUEST_STATUSES: RequestStatus[] = ["ABIERTA", "EN_ANALISIS", "COTIZADA", "CERRADA", "CANCELADA"];
+export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = { ABIERTA: "Abierta", EN_ANALISIS: "En análisis", COTIZADA: "Cotizada", CERRADA: "Cerrada", CANCELADA: "Cancelada" };
+export type Incoterm = "FOB" | "CFR";
+type Ref = { id: number; name: string };
+export interface PurchaseRequest { id: number; buyer: Ref; product: string; variety: string; tons: number; maxBrokenPct: number | null; maxMoisturePct: number | null; presentation: string | null; destination: string; incoterm: Incoterm; requiredBy: string | null; certifications: string | null; status: RequestStatus; notes: string | null; createdBy: Ref; createdAt: string; updatedAt: string; allowedTransitions: RequestStatus[] }
+export interface PurchaseRequestInput { buyerCompanyId: number; variety: string; tons: number; destination: string; incoterm: Incoterm; product?: string; maxBrokenPct?: number | null; maxMoisturePct?: number | null; presentation?: string | null; requiredBy?: string | null; certifications?: string | null; notes?: string | null }
+export interface MatchingResult { lotId: number; result: MatchResult; matches: string[]; conditions: string[]; failures: string[]; lot: { id: number; product: string; variety: string; presentation: string; brokenPct: number | null; moisturePct: number | null; tonsAvailable: number; pricePerTonCents: number; supplier: Ref | null } }
+export interface ProposalLine { lotId: number; supplier: Ref | null; tons: number; pricePerTonCents: number; subtotalCents: number | null; pricePending: boolean; result: Exclude<MatchResult, "incompatible">; conditions: string[] }
+export interface Proposal { lines: ProposalLine[]; coveredTons: number; missingTons: number; complete: boolean; totalCents: number; totalScope: string; weightedAvgPriceCents: number; pricingComplete: boolean; notEvaluated: ("requiredBy" | "certifications")[]; disclaimer: string }
+export interface MatchingResponse { request: PurchaseRequest; results: MatchingResult[]; proposal: Proposal }
+
+type Method ="GET" | "POST" | "PATCH" | "DELETE";
 export type ComexSession = { token: string | null; onUnauthorized: () => void };
 
 export async function comexRequest<T>(path: string, session: ComexSession, opts: { method?: Method; body?: unknown } = {}): Promise<T> {
@@ -61,6 +74,19 @@ export function comexClient(session: ComexSession) {
     addContact: (companyId: number, body: ContactInput) => call<CompanyContact>(`/comex/companies/${companyId}/contacts`, { method: "POST", body }),
     deleteContact: (id: number) => call<void>(`/comex/contacts/${id}`, { method: "DELETE" }),
     linkLotSupplier: (lotId: number, supplierCompanyId: number | null) => call<{ lotId: number; supplier: { id: number; name: string } | null }>(`/comex/lots/${lotId}/supplier`, { method: "PATCH", body: { supplierCompanyId } }),
+    listRequests: (filters: { status?: RequestStatus | ""; buyerCompanyId?: number | ""; q?: string } = {}) => {
+      const params = new URLSearchParams();
+      if (filters.status) params.set("status", filters.status);
+      if (filters.buyerCompanyId) params.set("buyerCompanyId", String(filters.buyerCompanyId));
+      if (filters.q?.trim()) params.set("q", filters.q.trim());
+      const qs = params.toString();
+      return call<PurchaseRequest[]>(`/comex/requests${qs ? `?${qs}` : ""}`);
+    },
+    getRequest: (id: number) => call<PurchaseRequest>(`/comex/requests/${id}`),
+    createRequest: (body: PurchaseRequestInput) => call<PurchaseRequest>("/comex/requests", { method: "POST", body }),
+    updateRequest: (id: number, body: Partial<PurchaseRequestInput>) => call<PurchaseRequest>(`/comex/requests/${id}`, { method: "PATCH", body }),
+    setRequestStatus: (id: number, status: RequestStatus) => call<PurchaseRequest>(`/comex/requests/${id}/status`, { method: "POST", body: { status } }),
+    getMatching: (id: number) => call<MatchingResponse>(`/comex/requests/${id}/matching`),
     listUsers: () => call<ComexUser[]>("/comex/users"),
     createUser: (body: NewUserInput) => call<ComexUser>("/comex/users", { method: "POST", body }),
   };
@@ -71,4 +97,5 @@ export type ComexClient = ReturnType<typeof comexClient>;
 export const login = (email: string, password: string) => comexRequest<LoginResponse>("/auth/login", { token: null, onUnauthorized: () => {} }, { method: "POST", body: { email, password } });
 
 export const canWriteCompanies = (user: ComexUser | null) => !!user && user.roles.some((r) => r === "ADMIN" || r === "COMEX");
+export const canWriteRequests = canWriteCompanies;
 export const canManageUsers = (user: ComexUser | null) => !!user && user.roles.includes("ADMIN");

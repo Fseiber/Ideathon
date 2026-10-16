@@ -27,6 +27,8 @@ import { Route as ComexLoginRouteImport } from './routes/comex.login'
 import { Route as ComexUsuariosRouteImport } from './routes/comex.usuarios'
 import { Route as ComprobanteIdRouteImport } from './routes/comprobante.$id'
 import { Route as LotesIdRouteImport } from './routes/lotes.$id'
+import { Route as ComexSolicitudesIndexRouteImport } from './routes/comex.solicitudes.index'
+import { Route as ComexSolicitudesIdRouteImport } from './routes/comex.solicitudes.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +120,16 @@ const LotesIdRoute = LotesIdRouteImport.update({
   path: '/lotes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComexSolicitudesIndexRoute = ComexSolicitudesIndexRouteImport.update({
+  id: '/comex/solicitudes/',
+  path: '/comex/solicitudes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComexSolicitudesIdRoute = ComexSolicitudesIdRouteImport.update({
+  id: '/comex/solicitudes/$id',
+  path: '/comex/solicitudes/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +150,8 @@ export interface FileRoutesByFullPath {
   '/comex/usuarios': typeof ComexUsuariosRoute
   '/comprobante/$id': typeof ComprobanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/comex/solicitudes/$id': typeof ComexSolicitudesIdRoute
+  '/comex/solicitudes/': typeof ComexSolicitudesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +172,8 @@ export interface FileRoutesByTo {
   '/comex/usuarios': typeof ComexUsuariosRoute
   '/comprobante/$id': typeof ComprobanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/comex/solicitudes/$id': typeof ComexSolicitudesIdRoute
+  '/comex/solicitudes': typeof ComexSolicitudesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,6 +195,8 @@ export interface FileRoutesById {
   '/comex/usuarios': typeof ComexUsuariosRoute
   '/comprobante/$id': typeof ComprobanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/comex/solicitudes/$id': typeof ComexSolicitudesIdRoute
+  '/comex/solicitudes/': typeof ComexSolicitudesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -201,6 +219,8 @@ export interface FileRouteTypes {
     | '/comex/usuarios'
     | '/comprobante/$id'
     | '/lotes/$id'
+    | '/comex/solicitudes/$id'
+    | '/comex/solicitudes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -221,6 +241,8 @@ export interface FileRouteTypes {
     | '/comex/usuarios'
     | '/comprobante/$id'
     | '/lotes/$id'
+    | '/comex/solicitudes/$id'
+    | '/comex/solicitudes'
   id:
     | '__root__'
     | '/'
@@ -241,6 +263,8 @@ export interface FileRouteTypes {
     | '/comex/usuarios'
     | '/comprobante/$id'
     | '/lotes/$id'
+    | '/comex/solicitudes/$id'
+    | '/comex/solicitudes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -262,6 +286,8 @@ export interface RootRouteChildren {
   ComexUsuariosRoute: typeof ComexUsuariosRoute
   ComprobanteIdRoute: typeof ComprobanteIdRoute
   LotesIdRoute: typeof LotesIdRoute
+  ComexSolicitudesIdRoute: typeof ComexSolicitudesIdRoute
+  ComexSolicitudesIndexRoute: typeof ComexSolicitudesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -392,6 +418,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LotesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comex/solicitudes/': {
+      id: '/comex/solicitudes/'
+      path: '/comex/solicitudes'
+      fullPath: '/comex/solicitudes/'
+      preLoaderRoute: typeof ComexSolicitudesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/comex/solicitudes/$id': {
+      id: '/comex/solicitudes/$id'
+      path: '/comex/solicitudes/$id'
+      fullPath: '/comex/solicitudes/$id'
+      preLoaderRoute: typeof ComexSolicitudesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -414,6 +454,8 @@ const rootRouteChildren: RootRouteChildren = {
   ComexUsuariosRoute: ComexUsuariosRoute,
   ComprobanteIdRoute: ComprobanteIdRoute,
   LotesIdRoute: LotesIdRoute,
+  ComexSolicitudesIdRoute: ComexSolicitudesIdRoute,
+  ComexSolicitudesIndexRoute: ComexSolicitudesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
