@@ -120,7 +120,12 @@ export interface ApiLot {
   explorerUrl: string | null;
   createdAt: string;
   supplier?: { id: number; name: string };
+  tonsReserved?: number;
+  commercialAvailable?: number;
 }
+
+// Toneladas comercialmente disponibles (stock menos reservas COMEX confirmadas). Si el backend no envía el campo, usa tonsAvailable.
+export const availableTons = (lot: Pick<ApiLot, "tonsAvailable" | "commercialAvailable">) => lot.commercialAvailable ?? lot.tonsAvailable;
 
 export type LotAttributes = { variety?: string; province?: string; presentation?: string; brokenPct?: number; moisturePct?: number; pricePerTonUsd?: number };
 

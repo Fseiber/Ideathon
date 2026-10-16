@@ -4,11 +4,12 @@ import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { REQUEST_STATUS_LABEL, canWriteRequests, type PurchaseRequest, type RequestStatus } from "@/lib/comex-api";
+import { EDITABLE_REQUEST_STATUSES, REQUEST_STATUS_LABEL, canWriteRequests, type PurchaseRequest, type RequestStatus } from "@/lib/comex-api";
 import { MATCHING_DISCLAIMER, RESULT_LABEL, RESULT_TONO } from "@/lib/lot-matching";
 import { Card, StatusBadge } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { STATUS_TONO } from "./requests-page";
+import { ReservationsSection } from "./reservations-section";
 
 const usd = (cents: number) => (cents / 100).toLocaleString("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
 const NOT_EVALUATED_LABEL = { requiredBy: "Fecha requerida", certifications: "Certificaciones" } as const;
@@ -46,7 +47,8 @@ export function ComexRequestDetailPage({ id }: { id: number }) {
       <RequirementsCard request={request} />
 
       <Card>
-        <h2 className="mb-3 text-base font-semibold">Propuesta de abastecimiento multilote</h2>
+        <h2 className="mb-1 text-base font-semibold">Propuesta de abastecimiento multilote</h2>
+        <p className={proposal.complete ? "mb-3 text-sm font-medium" : "mb-3 text-sm font-medium text-warning-foreground"}>{proposal.summary}</p>
         <p role="note" className="mb-4 rounded-md border border-warning/40 bg-warning-muted/50 p-3 text-xs text-warning-foreground">{MATCHING_DISCLAIMER}</p>
         {proposal.lines.length === 0 ? <p className="text-sm text-muted-foreground">Ningún lote publicado cubre esta solicitud.</p> : (
           <div className="overflow-x-auto">
@@ -60,7 +62,7 @@ export function ComexRequestDetailPage({ id }: { id: number }) {
                     <td className="pr-3">{line.tons} tn</td>
                     <td className="pr-3">{line.pricePending ? "Pendiente de cotización" : usd(line.pricePerTonCents)}</td>
                     <td className="pr-3">{line.subtotalCents === null ? "—" : usd(line.subtotalCents)}</td>
-                    <td><StatusBadge tono={RESULT_TONO[line.result]}>{RESULT_LABEL[line.result]}</StatusBadge>{line.conditions.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{line.conditions.map((c) => <li key={c}>{c}</li>)}</ul>}</td>
+                    <td><StatusBadge tono={RESULT_TONO[line.result]}>{RESULT_LABEL[line.result]}</StatusBadge>{line.conditions.length > 0 && <ul className="mt-1 list-disc pl-4 text-xs text-muted-foreground">{line.conditions.map((c) => <li key={c}>{c}</li>)}</ul>}{line.partialContribution && <p className="mt-1 text-xs text-muted-foreground">Aporte parcial: {line.tons} de {request.tons} tn</p>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -77,6 +79,8 @@ export function ComexRequestDetailPage({ id }: { id: number }) {
         {proposal.notEvaluated.length > 0 && <p className="mt-2 text-xs text-muted-foreground">No evaluado por el Matching: {proposal.notEvaluated.map((f) => NOT_EVALUATED_LABEL[f]).join(", ")}.</p>}
       </Card>
 
+      <ReservationsSection requestId={request.id} requestTons={request.tons} canRequest={EDITABLE_REQUEST_STATUSES.includes(request.status) && proposal.lines.length > 0} />
+
       <Card>
         <h2 className="mb-3 text-base font-semibold">Compatibilidad por lote</h2>
         <div className="overflow-x-auto">
@@ -88,9 +92,9 @@ export function ComexRequestDetailPage({ id }: { id: number }) {
                   <td className="py-2 pr-3">#{r.lotId}</td>
                   <td className="pr-3">{r.lot.supplier?.name ?? "—"}</td>
                   <td className="pr-3">{r.lot.variety}</td>
-                  <td className="pr-3">{r.lot.tonsAvailable} tn</td>
+                  <td className="pr-3">{r.lot.commercialAvailable} tn{r.lot.commercialAvailable !== r.lot.tonsAvailable && <span className="block text-xs text-muted-foreground">de {r.lot.tonsAvailable} en stock</span>}</td>
                   <td className="pr-3"><StatusBadge tono={RESULT_TONO[r.result]}>{RESULT_LABEL[r.result]}</StatusBadge></td>
-                  <td className="text-xs"><ul className="space-y-0.5">{r.failures.map((f) => <li key={f} className="text-destructive">✕ {f}</li>)}{r.conditions.map((c) => <li key={c} className="text-warning-foreground">! {c}</li>)}{r.matches.map((m) => <li key={m} className="text-muted-foreground">✓ {m}</li>)}</ul></td>
+                  <td className="text-xs"><ul className="space-y-0.5">{r.failures.map((f) => <li key={f} className="text-destructive">✕ {f}</li>)}{r.conditions.map((c) => <li key={c} className="text-warning-foreground">! {c}</li>)}{r.contributionNote && <li className="text-muted-foreground">◐ {r.contributionNote}</li>}{r.matches.map((m) => <li key={m} className="text-muted-foreground">✓ {m}</li>)}</ul></td>
                 </tr>
               ))}
             </tbody>

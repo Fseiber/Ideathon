@@ -1,56 +1,280 @@
 [
   {
     "name": "todos los requisitos cumplidos",
-    "request": { "variety": "Largo fino", "tons": 50, "maxBrokenPct": 5, "maxMoisturePct": 14, "presentation": "Bolsas 25 kg" },
-    "lot": { "id": 1, "variety": "Largo fino", "tonsAvailable": 100, "brokenPct": 4, "moisturePct": 13, "presentation": "Bolsas 25 kg", "pricePerTonCents": 60000 },
-    "expected": { "result": "compatible", "conditions": [], "failures": [] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 50,
+      "maxBrokenPct": 5,
+      "maxMoisturePct": 14,
+      "presentation": "Bolsas 25 kg"
+    },
+    "lot": {
+      "id": 1,
+      "variety": "Largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": 4,
+      "moisturePct": 13,
+      "presentation": "Bolsas 25 kg",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "compatible",
+      "conditions": [],
+      "failures": [],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "variedad distinta normalizando acentos y mayúsculas",
-    "request": { "variety": "Largo fino", "tons": 10 },
-    "lot": { "id": 2, "variety": "Doble Carolina", "tonsAvailable": 100, "brokenPct": 3, "moisturePct": 13, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "incompatible", "conditions": [], "failures": ["Variedad distinta: se requiere Largo fino y el lote es Doble Carolina"] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10
+    },
+    "lot": {
+      "id": 2,
+      "variety": "Doble Carolina",
+      "tonsAvailable": 100,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "incompatible",
+      "conditions": [],
+      "failures": [
+        "Variedad distinta: se requiere Largo fino y el lote es Doble Carolina"
+      ],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "variedad igual con acentos y mayúsculas distintas",
-    "request": { "variety": "  LARGO  FÍNO ", "tons": 10 },
-    "lot": { "id": 3, "variety": "largo fino", "tonsAvailable": 100, "brokenPct": null, "moisturePct": null, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "compatible", "conditions": [], "failures": [] }
+    "request": {
+      "variety": "  LARGO  FÍNO ",
+      "tons": 10
+    },
+    "lot": {
+      "id": 3,
+      "variety": "largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": null,
+      "moisturePct": null,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "compatible",
+      "conditions": [],
+      "failures": [],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "quebrado superior al máximo",
-    "request": { "variety": "Largo fino", "tons": 10, "maxBrokenPct": 5 },
-    "lot": { "id": 4, "variety": "Largo fino", "tonsAvailable": 100, "brokenPct": 7, "moisturePct": 13, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "incompatible", "conditions": [], "failures": ["Quebrado 7% supera el máximo de 5%"] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10,
+      "maxBrokenPct": 5
+    },
+    "lot": {
+      "id": 4,
+      "variety": "Largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": 7,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "incompatible",
+      "conditions": [],
+      "failures": [
+        "Quebrado 7% supera el máximo de 5%"
+      ],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "humedad superior al máximo",
-    "request": { "variety": "Largo fino", "tons": 10, "maxMoisturePct": 13 },
-    "lot": { "id": 5, "variety": "Largo fino", "tonsAvailable": 100, "brokenPct": 3, "moisturePct": 14.5, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "incompatible", "conditions": [], "failures": ["Humedad 14.5% supera el máximo de 13%"] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10,
+      "maxMoisturePct": 13
+    },
+    "lot": {
+      "id": 5,
+      "variety": "Largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": 3,
+      "moisturePct": 14.5,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "incompatible",
+      "conditions": [],
+      "failures": [
+        "Humedad 14.5% supera el máximo de 13%"
+      ],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "sin disponibilidad",
-    "request": { "variety": "Largo fino", "tons": 10 },
-    "lot": { "id": 6, "variety": "Largo fino", "tonsAvailable": 0, "brokenPct": 3, "moisturePct": 13, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "incompatible", "conditions": [], "failures": ["Sin disponibilidad"] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10
+    },
+    "lot": {
+      "id": 6,
+      "variety": "Largo fino",
+      "tonsAvailable": 0,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "incompatible",
+      "conditions": [],
+      "failures": [
+        "Sin disponibilidad"
+      ],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
     "name": "calidad no declarada es condicional",
-    "request": { "variety": "Largo fino", "tons": 10, "maxBrokenPct": 5, "maxMoisturePct": 14 },
-    "lot": { "id": 7, "variety": "Largo fino", "tonsAvailable": 100, "brokenPct": null, "moisturePct": null, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "condicional", "conditions": ["Quebrado no declarado (máx. 5%)", "Humedad no declarado (máx. 14%)"], "failures": [] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10,
+      "maxBrokenPct": 5,
+      "maxMoisturePct": 14
+    },
+    "lot": {
+      "id": 7,
+      "variety": "Largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": null,
+      "moisturePct": null,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "condicional",
+      "conditions": [
+        "Quebrado no declarado (máx. 5%)",
+        "Humedad no declarado (máx. 14%)"
+      ],
+      "failures": [],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   },
   {
-    "name": "volumen insuficiente es condicional",
-    "request": { "variety": "Largo fino", "tons": 50 },
-    "lot": { "id": 8, "variety": "Largo fino", "tonsAvailable": 30, "brokenPct": 3, "moisturePct": 13, "presentation": "Granel", "pricePerTonCents": 60000 },
-    "expected": { "result": "condicional", "conditions": ["Disponibilidad parcial: 30 de 50 tn"], "failures": [] }
+    "name": "volumen insuficiente es aporte parcial, no condición",
+    "request": {
+      "variety": "Largo fino",
+      "tons": 50
+    },
+    "lot": {
+      "id": 8,
+      "variety": "Largo fino",
+      "tonsAvailable": 30,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "compatible",
+      "conditions": [],
+      "failures": [],
+      "partialContribution": true,
+      "contributionNote": "Aporte parcial: 30 de 50 tn"
+    }
   },
   {
     "name": "presentación distinta es condicional",
-    "request": { "variety": "Largo fino", "tons": 10, "presentation": "Bolsas 50 kg" },
-    "lot": { "id": 9, "variety": "Largo fino", "tonsAvailable": 100, "brokenPct": 3, "moisturePct": 13, "presentation": "Bolsas 25 kg", "pricePerTonCents": 60000 },
-    "expected": { "result": "condicional", "conditions": ["Presentación distinta: se solicita Bolsas 50 kg y el lote está en Bolsas 25 kg"], "failures": [] }
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10,
+      "presentation": "Bolsas 50 kg"
+    },
+    "lot": {
+      "id": 9,
+      "variety": "Largo fino",
+      "tonsAvailable": 100,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Bolsas 25 kg",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "condicional",
+      "conditions": [
+        "Presentación distinta: se solicita Bolsas 50 kg y el lote está en Bolsas 25 kg"
+      ],
+      "failures": [],
+      "partialContribution": false,
+      "contributionNote": null
+    }
+  },
+  {
+    "name": "reservas confirmadas reducen la disponibilidad comercial",
+    "request": {
+      "variety": "Largo fino",
+      "tons": 50
+    },
+    "lot": {
+      "id": 10,
+      "variety": "Largo fino",
+      "tonsAvailable": 40,
+      "tonsReserved": 30,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 65000
+    },
+    "expected": {
+      "result": "compatible",
+      "conditions": [],
+      "failures": [],
+      "partialContribution": true,
+      "contributionNote": "Aporte parcial: 10 de 50 tn"
+    }
+  },
+  {
+    "name": "lote totalmente reservado no tiene disponibilidad",
+    "request": {
+      "variety": "Largo fino",
+      "tons": 10
+    },
+    "lot": {
+      "id": 11,
+      "variety": "Largo fino",
+      "tonsAvailable": 30,
+      "tonsReserved": 30,
+      "brokenPct": 3,
+      "moisturePct": 13,
+      "presentation": "Granel",
+      "pricePerTonCents": 60000
+    },
+    "expected": {
+      "result": "incompatible",
+      "conditions": [],
+      "failures": [
+        "Sin disponibilidad"
+      ],
+      "partialContribution": false,
+      "contributionNote": null
+    }
   }
 ]

@@ -20,13 +20,18 @@ describe('matchLot', () => {
       assert.equal(r.result, c.expected.result);
       assert.deepEqual(r.conditions, c.expected.conditions);
       assert.deepEqual(r.failures, c.expected.failures);
+      assert.equal(r.partialContribution, c.expected.partialContribution);
+      assert.equal(r.contributionNote, c.expected.contributionNote);
     });
   }
   test('1-5. casos obligatorios', () => {
     assert.equal(matchLot(req(), lot(1, { variety: 'Doble Carolina' })).result, 'incompatible');
     assert.equal(matchLot(req({ maxBrokenPct: 5 }), lot(1, { brokenPct: 6 })).result, 'incompatible');
     assert.equal(matchLot(req({ maxBrokenPct: 5 }), lot(1, { brokenPct: null })).result, 'condicional');
-    assert.equal(matchLot(req({ tons: 200 }), lot(1)).result, 'condicional');
+    // F3A: el volumen insuficiente ya no es condición; es aporte parcial.
+    const partial = matchLot(req({ tons: 200 }), lot(1));
+    assert.equal(partial.result, 'compatible');
+    assert.equal(partial.partialContribution, true);
     assert.equal(matchLot(req({ maxBrokenPct: 5, maxMoisturePct: 14, presentation: 'bolsas 25 KG' }), lot(1)).result, 'compatible');
   });
 });
@@ -135,6 +140,7 @@ describe('API /api/comex/requests', () => {
   });
 
   beforeEach(async () => {
+    await prisma.lotReservation.deleteMany();
     await prisma.purchaseRequest.deleteMany();
     await prisma.auditEvent.deleteMany();
     await prisma.session.deleteMany();
@@ -153,6 +159,7 @@ describe('API /api/comex/requests', () => {
   });
 
   after(async () => {
+    await prisma.lotReservation.deleteMany();
     await prisma.purchaseRequest.deleteMany();
     await prisma.auditEvent.deleteMany();
     await prisma.session.deleteMany();
@@ -243,7 +250,7 @@ describe('API /api/comex/requests', () => {
     const before = await prisma.lot.findMany({ orderBy: { id: 'asc' }, select: { id: true, tonsAvailable: true } });
     const r = await request(`/api/comex/requests/${created.id}/matching`, { token });
     assert.equal(r.response.status, 200);
-    assert.deepEqual(r.body.results.map(x => [x.lotId, x.result]), [[1, 'condicional'], [2, 'condicional'], [3, 'incompatible']]);
+    assert.deepEqual(r.body.results.map(x => [x.lotId, x.result, x.partialContribution]), [[1, 'compatible', true], [2, 'compatible', true], [3, 'incompatible', false]]);
     const p = r.body.proposal;
     assert.deepEqual(p.lines.map(l => [l.lotId, l.tons, l.subtotalCents, l.supplier?.name ?? null]), [[1, 30, 1800000, 'Molino Norte'], [2, 20, 1300000, null]]);
     assert.equal(p.totalCents, 3100000);

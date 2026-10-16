@@ -31,9 +31,11 @@ model Lot {
   mintTxHash String?
   createdAt DateTime @default(now())
   supplierCompanyId Int?
+  tonsReserved Int @default(0)
   mill Party @relation(fields: [millId], references: [id])
   supplier Company? @relation("SupplierLots", fields: [supplierCompanyId], references: [id])
   orders Order[]
+  reservations LotReservation[]
 }
 
 model Order {
@@ -92,6 +94,8 @@ model User {
   sessions Session[]
   audits AuditEvent[]
   purchaseRequests PurchaseRequest[]
+  reservationsCreated LotReservation[] @relation("ReservationCreatedBy")
+  reservationsConfirmed LotReservation[] @relation("ReservationConfirmedBy")
 }
 
 model Session {
@@ -159,7 +163,35 @@ model PurchaseRequest {
   updatedAt DateTime @updatedAt
   buyer Company @relation(fields: [buyerCompanyId], references: [id])
   createdBy User @relation(fields: [createdById], references: [id])
+  reservations LotReservation[]
 
   @@index([status])
   @@index([buyerCompanyId])
+}
+
+model LotReservation {
+  id Int @id @default(autoincrement())
+  lotId Int
+  requestId Int?
+  tons Int
+  status String @default("SOLICITADA") // SOLICITADA, CONFIRMADA, LIBERADA, VENCIDA, CONSUMIDA
+  expiresAt DateTime
+  confirmedAt DateTime?
+  confirmedById Int?
+  confirmationChannel String? // EMAIL, TELEFONO, WHATSAPP, PRESENCIAL, OTRO
+  confirmationContact String?
+  confirmationReference String?
+  releasedAt DateTime?
+  releaseReason String?
+  createdById Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lot Lot @relation(fields: [lotId], references: [id])
+  request PurchaseRequest? @relation(fields: [requestId], references: [id])
+  createdBy User @relation("ReservationCreatedBy", fields: [createdById], references: [id])
+  confirmedBy User? @relation("ReservationConfirmedBy", fields: [confirmedById], references: [id])
+
+  @@index([status, expiresAt])
+  @@index([requestId])
+  @@index([lotId])
 }

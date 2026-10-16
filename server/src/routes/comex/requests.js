@@ -4,11 +4,12 @@ import { bodyObject, integerId, lengthString, optionalLengthString } from '../..
 import { requirePermission } from '../../middleware/session.js';
 import { parseRoles } from '../../services/permissions.js';
 import { audit } from '../../services/audit.js';
-import { proposeAllocation, rankMatches } from '../../services/comexMatching.js';
+import { availableTons, proposeAllocation, rankMatches } from '../../services/comexMatching.js';
+import { expireDueReservations } from '../../services/reservationService.js';
 
 export const REQUEST_STATUSES = ['ABIERTA', 'EN_ANALISIS', 'COTIZADA', 'CERRADA', 'CANCELADA'];
 export const INCOTERMS = ['FOB', 'CFR'];
-const EDITABLE_STATUSES = ['ABIERTA', 'EN_ANALISIS'];
+export const EDITABLE_STATUSES = ['ABIERTA', 'EN_ANALISIS'];
 // COTIZADA y CERRADA quedan reservadas para F3.
 const TRANSITIONS = { ABIERTA: ['EN_ANALISIS', 'CANCELADA'], EN_ANALISIS: ['ABIERTA', 'CANCELADA'] };
 const FIELDS = ['buyerCompanyId', 'product', 'variety', 'tons', 'maxBrokenPct', 'maxMoisturePct', 'presentation', 'destination', 'incoterm', 'requiredBy', 'certifications', 'notes'];
@@ -55,7 +56,7 @@ async function assertBuyer(prisma, id) {
   if (!parseRoles(buyer.roles).includes('COMPRADOR')) throw new AppError('VALIDATION_ERROR', 'La empresa debe tener rol COMPRADOR');
 }
 
-async function findRequest(prisma, id) {
+export async function findRequest(prisma, id) {
   const request = await prisma.purchaseRequest.findUnique({ where: { id }, include });
   if (!request) throw new AppError('NOT_FOUND', 'Solicitud no encontrada', 404);
   return request;
@@ -65,6 +66,23 @@ const auditable = data => Object.fromEntries(FIELDS.filter(k => data[k] !== unde
 
 export function serializeRequest(r) {
   return { id: r.id, buyer: r.buyer, product: r.product, variety: r.variety, tons: r.tons, maxBrokenPct: r.maxBrokenPct, maxMoisturePct: r.maxMoisturePct, presentation: r.presentation, destination: r.destination, incoterm: r.incoterm, requiredBy: r.requiredBy, certifications: r.certifications, status: r.status, notes: r.notes, createdBy: r.createdBy, createdAt: r.createdAt, updatedAt: r.updatedAt, allowedTransitions: TRANSITIONS[r.status] || [] };
+}
+
+// Matching sobre la disponibilidad comercial. Las reservas CONFIRMADAS de esta misma solicitud
+// se suman de vuelta: el stock que ya le reservaron no debe restarle cobertura a su propia propuesta.
+export async function buildMatching(prisma, request) {
+  await expireDueReservations(prisma);
+  const [rawLots, own] = await Promise.all([
+    prisma.lot.findMany({ orderBy: { id: 'asc' }, include: { supplier: { select: { id: true, name: true } } } }),
+    prisma.lotReservation.findMany({ where: { requestId: request.id, status: 'CONFIRMADA' } }),
+  ]);
+  const ownByLot = new Map();
+  for (const r of own) ownByLot.set(r.lotId, (ownByLot.get(r.lotId) ?? 0) + r.tons);
+  const lots = rawLots.map(l => ({ ...l, tonsReserved: Math.max(0, (l.tonsReserved ?? 0) - (ownByLot.get(l.id) ?? 0)) }));
+  const lotsById = new Map(lots.map(l => [l.id, l]));
+  const results = rankMatches(request, lots).map(m => { const lot = lotsById.get(m.lotId); return { ...m, lot: { id: lot.id, product: lot.product, variety: lot.variety, presentation: lot.presentation, brokenPct: lot.brokenPct, moisturePct: lot.moisturePct, tonsAvailable: lot.tonsAvailable, commercialAvailable: availableTons(lot), pricePerTonCents: lot.pricePerTonCents, supplier: lot.supplier } }; });
+  const confirmedTons = own.reduce((sum, r) => sum + r.tons, 0);
+  return { request: serializeRequest(request), results, proposal: proposeAllocation(request, lots, { confirmedTons }), confirmedTons };
 }
 
 export function requestsRouter(prisma) {
@@ -134,12 +152,7 @@ export function requestsRouter(prisma) {
   } catch (e) { next(e); } });
 
   router.get('/requests/:id/matching', requirePermission('requests:read'), async (req, res, next) => { try {
-    const request = await findRequest(prisma, integerId(req.params.id, 'id'));
-    // F2: disponibilidad = lot.tonsAvailable del flujo existente; sólo lectura, no reserva stock.
-    const lots = await prisma.lot.findMany({ orderBy: { id: 'asc' }, include: { supplier: { select: { id: true, name: true } } } });
-    const lotsById = new Map(lots.map(l => [l.id, l]));
-    const results = rankMatches(request, lots).map(m => { const lot = lotsById.get(m.lotId); return { ...m, lot: { id: lot.id, product: lot.product, variety: lot.variety, presentation: lot.presentation, brokenPct: lot.brokenPct, moisturePct: lot.moisturePct, tonsAvailable: lot.tonsAvailable, pricePerTonCents: lot.pricePerTonCents, supplier: lot.supplier } }; });
-    res.json({ request: serializeRequest(request), results, proposal: proposeAllocation(request, lots) });
+    res.json(await buildMatching(prisma, await findRequest(prisma, integerId(req.params.id, 'id'))));
   } catch (e) { next(e); } });
 
   return router;

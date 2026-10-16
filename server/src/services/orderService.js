@@ -5,6 +5,7 @@ import { getHederaMode, hashscanUrl } from './hederaService.js';
 import { sealOrder } from './sealService.js';
 import { integerId, optionalPercent, positiveInteger, positiveNumber, requiredString } from '../utils/validate.js';
 import { quote } from './quote.js';
+import { commercialAvailable, expireDueReservations } from './reservationService.js';
 dotenv.config();
 
 const include = { events: { orderBy: { createdAt: 'asc' } } };
@@ -32,13 +33,12 @@ export async function createOrder(prisma, input) {
     lot = await prisma.lot.findUnique({ where: { id: requestedLotId } });
     if (!lot) throw new AppError('NOT_FOUND', 'Lote no encontrado', 404);
     if (lot.millId !== millId) throw new AppError('VALIDATION_ERROR', 'El lote no pertenece al molino');
-    if (lot.tonsAvailable < tons) throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente en el lote #${requestedLotId}. Disponibles: ${lot.tonsAvailable}`, 409);
+    // Disponibilidad comercial = tonsAvailable − reservas COMEX confirmadas.
+    if (commercialAvailable(lot) < tons) throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente en el lote #${requestedLotId}. Disponibles: ${commercialAvailable(lot)}`, 409);
   } else {
-    lot = await prisma.lot.findFirst({ where: { millId, tonsAvailable: { gte: tons } }, orderBy: { id: 'asc' } });
-  }
-  if (!lot) {
-    const available = await prisma.lot.aggregate({ where: { millId }, _sum: { tonsAvailable: true } });
-    throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente. Toneladas disponibles: ${available._sum.tonsAvailable || 0}`, 409);
+    const lots = await prisma.lot.findMany({ where: { millId }, orderBy: { id: 'asc' } });
+    lot = lots.find(candidate => commercialAvailable(candidate) >= tons);
+    if (!lot) throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente. Toneladas disponibles: ${lots.reduce((sum, candidate) => sum + Math.max(0, commercialAvailable(candidate)), 0)}`, 409);
   }
   const pricePerTonCents = explicitPricePerTonUsd === undefined ? lot.pricePerTonCents : Math.round(explicitPricePerTonUsd * 100);
   const values = quote({ tons, pricePerTonCents, incoterm: input.incoterm, freightCents: Math.round((input.freightUsd || 0) * 100), exportDutyPct });
@@ -50,8 +50,10 @@ export async function fund(prisma, id) {
   const order = await prisma.order.findUnique({ where: { id }, include: { mill: true, buyer: true } });
   try {
     if (!order.stockReserved) {
-      const reserved = await prisma.lot.updateMany({ where: { id: order.lotId, tonsAvailable: { gte: order.tons } }, data: { tonsAvailable: { decrement: order.tons } } });
-      if (reserved.count === 0) {
+      await expireDueReservations(prisma);
+      // Descuento atómico que respeta las reservas COMEX confirmadas (tonsReserved).
+      const reserved = await prisma.$executeRaw`UPDATE "Lot" SET "tonsAvailable" = "tonsAvailable" - ${order.tons} WHERE "id" = ${order.lotId} AND "tonsAvailable" - "tonsReserved" >= ${order.tons}`;
+      if (reserved === 0) {
         await prisma.order.update({ where: { id }, data: { status: 'COTIZADA' } });
         throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente para ${order.tons} toneladas`, 409);
       }

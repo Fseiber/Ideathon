@@ -5,10 +5,12 @@
 export const MATCHING_DISCLAIMER = 'La propuesta no reserva stock. Cobertura comercial estimada; no implica mezcla física de lotes ni compatibilidad documental. Precios publicados sin flete ni derechos.';
 
 export function normalizeText(value) {
-  return String(value ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return String(value ?? '').normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 const isSet = value => value !== null && value !== undefined;
+// F3A: disponibilidad comercial = stock del flujo Stellar menos reservas COMEX confirmadas.
+export const availableTons = lot => lot.tonsAvailable - (lot.tonsReserved ?? 0);
 
 export function matchLot(request, lot) {
   const matches = [];
@@ -18,9 +20,12 @@ export function matchLot(request, lot) {
   if (normalizeText(lot.variety) !== normalizeText(request.variety)) failures.push(`Variedad distinta: se requiere ${request.variety} y el lote es ${lot.variety}`);
   else matches.push(`Variedad ${lot.variety}`);
 
-  if (lot.tonsAvailable <= 0) failures.push('Sin disponibilidad');
-  else if (lot.tonsAvailable < request.tons) conditions.push(`Disponibilidad parcial: ${lot.tonsAvailable} de ${request.tons} tn`);
-  else matches.push(`Disponibilidad suficiente: ${lot.tonsAvailable} tn`);
+  // El volumen no decide el resultado técnico: un lote chico puede aportar parcialmente a una propuesta multilote.
+  const available = availableTons(lot);
+  let contributionNote = null;
+  if (available <= 0) failures.push('Sin disponibilidad');
+  else if (available < request.tons) contributionNote = `Aporte parcial: ${available} de ${request.tons} tn`;
+  else matches.push(`Disponibilidad suficiente: ${available} tn`);
 
   for (const [label, max, value] of [['Quebrado', request.maxBrokenPct, lot.brokenPct], ['Humedad', request.maxMoisturePct, lot.moisturePct]]) {
     if (!isSet(max)) continue;
@@ -35,7 +40,7 @@ export function matchLot(request, lot) {
   }
 
   const result = failures.length ? 'incompatible' : conditions.length ? 'condicional' : 'compatible';
-  return { lotId: lot.id, result, matches, conditions, failures };
+  return { lotId: lot.id, result, matches, conditions, failures, partialContribution: contributionNote !== null, contributionNote };
 }
 
 const RESULT_ORDER = { compatible: 0, condicional: 1, incompatible: 2 };
@@ -47,7 +52,7 @@ function compareCandidates(a, b) {
   return RESULT_ORDER[a.match.result] - RESULT_ORDER[b.match.result]
     || Number(!hasPrice(a.lot)) - Number(!hasPrice(b.lot))
     || (hasPrice(a.lot) && hasPrice(b.lot) ? a.lot.pricePerTonCents - b.lot.pricePerTonCents : 0)
-    || b.lot.tonsAvailable - a.lot.tonsAvailable
+    || availableTons(b.lot) - availableTons(a.lot)
     || a.lot.id - b.lot.id;
 }
 
@@ -67,7 +72,8 @@ export function notEvaluatedFields(request) {
   return fields;
 }
 
-export function proposeAllocation(request, lots) {
+// confirmedTons: toneladas ya reservadas y confirmadas para esta solicitud (sólo afecta el resumen).
+export function proposeAllocation(request, lots, { confirmedTons = 0 } = {}) {
   const candidates = uniqueLots(lots)
     .map(lot => ({ lot, match: matchLot(request, lot) }))
     .filter(c => c.match.result !== 'incompatible')
@@ -77,7 +83,7 @@ export function proposeAllocation(request, lots) {
   let remaining = request.tons;
   for (const { lot, match } of candidates) {
     if (remaining <= 0) break;
-    const tons = Math.min(remaining, lot.tonsAvailable);
+    const tons = Math.min(remaining, availableTons(lot));
     if (tons <= 0) continue;
     const priced = hasPrice(lot);
     lines.push({
@@ -89,6 +95,7 @@ export function proposeAllocation(request, lots) {
       pricePending: !priced,
       result: match.result,
       conditions: match.conditions,
+      partialContribution: tons < request.tons,
     });
     remaining -= tons;
   }
@@ -97,11 +104,17 @@ export function proposeAllocation(request, lots) {
   const pricedLines = lines.filter(line => !line.pricePending);
   const totalCents = pricedLines.reduce((sum, line) => sum + line.subtotalCents, 0);
   const pricedTons = pricedLines.reduce((sum, line) => sum + line.tons, 0);
+  const suppliers = new Set(lines.map(line => line.supplier ? `c${line.supplier.id}` : `l${line.lotId}`)).size;
+  const complete = coveredTons === request.tons;
+  const reservationsDone = confirmedTons >= request.tons;
   return {
     lines,
     coveredTons,
     missingTons: request.tons - coveredTons,
-    complete: coveredTons === request.tons,
+    complete,
+    summary: complete
+      ? `Cobertura completa: ${coveredTons}/${request.tons} tn con ${suppliers} ${suppliers === 1 ? 'proveedor' : 'proveedores'} · ${reservationsDone ? 'Reservas confirmadas' : 'Pendiente de confirmación de reservas'}`
+      : `Cobertura parcial: ${coveredTons}/${request.tons} tn`,
     totalCents,
     totalScope: 'Subtotal conocido de mercadería, sin flete, derechos ni otros costos COMEX',
     weightedAvgPriceCents: pricedTons ? Math.round(totalCents / pricedTons) : 0,

@@ -3,8 +3,8 @@ export const USER_ROLES = ['ADMIN', 'COMEX', 'DOCS', 'FINANCE'];
 const ROLE_PERMISSIONS = {
   ADMIN: ['*'],
   COMEX: ['companies:read', 'companies:write', 'lots:link', 'requests:*', 'reservations:*'],
-  DOCS: ['companies:read', 'requests:read'],
-  FINANCE: ['companies:read', 'requests:read'],
+  DOCS: ['companies:read', 'requests:read', 'reservations:read'],
+  FINANCE: ['companies:read', 'requests:read', 'reservations:read'],
 };
 
 export function parseRoles(csv) { return String(csv || '').split(',').map(r => r.trim()).filter(Boolean); }
