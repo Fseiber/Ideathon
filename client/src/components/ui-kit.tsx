@@ -54,7 +54,7 @@ export function StatusBadge({ children, tono = "neutral" }: { children: ReactNod
 
 export function tonoEstado(estado: string): Tono {
   const e = estado.toLowerCase();
-  if (/(verificado|disponible|compatible$|aceptada|conciliada|recibido|activa)/.test(e)) return "success";
+  if (/(verificado|revisado|disponible|compatible$|aceptada|conciliada|recibido|activa)/.test(e)) return "success";
   if (/(pendiente|preparación|negociación|revisar|condicional|observado|reservado|enviada)/.test(e)) return "warning";
   if (/(incompatible|rechazada|diferencia|faltante|agotado|error)/.test(e)) return "danger";
   return "info";

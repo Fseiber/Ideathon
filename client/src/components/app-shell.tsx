@@ -3,7 +3,9 @@ import {
   Bell,
   Building2,
   Calculator,
-  ChevronDown,
+  FileSignature,
+  FileText,
+  Inbox,
   LayoutDashboard,
   MessageSquare,
   Package,
@@ -31,32 +33,56 @@ import {
 } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { ChatAssistantProvider, useChatAssistant } from "@/components/chat-assistant";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useChatAssistant } from "@/components/chat-assistant";
 
-const PRIMARY_NAV: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
-  { to: "/mis-productos", label: "Mis lotes", icon: Package },
-  { to: "/operaciones", label: "Operaciones", icon: Truck },
-  { to: "/trazabilidad", label: "Verificación Stellar", icon: Waypoints },
+type NavLink = { to: string; label: string; icon: LucideIcon; demo?: boolean };
+type NavModule = { titulo: string; items: NavLink[]; asistente?: boolean };
+
+// Menú organizado según el recorrido comercial de una compraventa, no por tecnología.
+const NAV_MODULES: NavModule[] = [
+  { titulo: "1 · Publicar mercadería", items: [{ to: "/mis-productos", label: "Mis lotes", icon: Package }] },
+  {
+    titulo: "2 · Encontrar y cotizar",
+    asistente: true,
+    items: [
+      { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
+      { to: "/matching", label: "Comparador de lotes", icon: Sparkles, demo: true },
+      { to: "/solicitudes", label: "Solicitudes de compra", icon: Inbox, demo: true },
+      { to: "/calculadora", label: "Calculadora COMEX", icon: Calculator, demo: true },
+    ],
+  },
+  { titulo: "3 · Formalizar el acuerdo", items: [{ to: "/cotizaciones", label: "Cotizaciones", icon: FileSignature, demo: true }] },
+  {
+    titulo: "4 · Ejecutar y verificar",
+    items: [
+      { to: "/operaciones", label: "Operaciones", icon: Truck },
+      { to: "/trazabilidad", label: "Verificación Stellar", icon: Waypoints },
+    ],
+  },
+  {
+    titulo: "5 · Conciliar y documentar",
+    items: [
+      { to: "/conciliacion", label: "Conciliación", icon: Scale, demo: true },
+      { to: "/documentacion", label: "Documentación", icon: FileText, demo: true },
+    ],
+  },
 ];
 
-const ROADMAP_NAV: { to: string; label: string; icon: LucideIcon }[] = [
-  { to: "/matching", label: "Matching avanzado", icon: Sparkles },
-  { to: "/calculadora", label: "Calculadora COMEX completa", icon: Calculator },
-  { to: "/documentacion", label: "Documentación internacional", icon: Package },
-  { to: "/conciliacion", label: "Conciliación SECOEXPO", icon: Scale },
-];
+const DASHBOARD: NavLink = { to: "/", label: "Dashboard", icon: LayoutDashboard };
+const MOBILE_NAV: NavLink[] = [DASHBOARD, ...NAV_MODULES.flatMap((m) => m.items)];
 
-function NavItem({ item, pathname }: { item: { to: string; label: string; icon: LucideIcon }; pathname: string }) {
+function isActive(to: string, pathname: string) {
+  return to === "/" ? pathname === "/" : pathname.startsWith(to);
+}
+
+function NavItem({ item, pathname }: { item: NavLink; pathname: string }) {
   const Icon = item.icon;
-  const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-  return <Link to={item.to} className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")}><Icon className="h-4 w-4 shrink-0" />{item.label}</Link>;
+  const active = isActive(item.to, pathname);
+  return <Link to={item.to} className={cn("flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors", active ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")}><Icon className="h-4 w-4 shrink-0" /><span className="flex-1">{item.label}</span>{item.demo && <span className="rounded border border-sidebar-border px-1 text-[9px] font-medium uppercase tracking-wide text-sidebar-foreground/45">demo</span>}</Link>;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  return <ChatAssistantProvider><AppShellContent>{children}</AppShellContent></ChatAssistantProvider>;
+  return <AppShellContent>{children}</AppShellContent>;
 }
 
 function AppShellContent({ children }: { children: ReactNode }) {
@@ -82,14 +108,17 @@ function AppShellContent({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2 scrollbar-thin">
-             {PRIMARY_NAV.slice(0, 3).map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}
-             <AssistantNavItem open={open} />
-             {PRIMARY_NAV.slice(3).map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}
-             <Collapsible defaultOpen={false}>
-             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50 hover:bg-sidebar-accent/60"><span>Próximamente</span><ChevronDown className="h-3.5 w-3.5" /></CollapsibleTrigger>
-             <CollapsibleContent className="space-y-0.5 pt-0.5">{ROADMAP_NAV.map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}</CollapsibleContent>
-           </Collapsible>
-           <NavItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} pathname={location.pathname} />
+          <NavItem item={DASHBOARD} pathname={location.pathname} />
+          {NAV_MODULES.map((modulo) => (
+            <div key={modulo.titulo} className="pt-3">
+              <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wide text-sidebar-foreground/45">{modulo.titulo}</p>
+              {modulo.items.map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}
+              {modulo.asistente && <AssistantNavItem open={open} />}
+            </div>
+          ))}
+          <div className="pt-3">
+            <NavItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} pathname={location.pathname} />
+          </div>
         </nav>
         <div className="border-t border-sidebar-border p-4">
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-sidebar-foreground/50">
@@ -114,7 +143,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
       {/* Contenido */}
       <div className="flex min-h-screen flex-1 flex-col lg:pl-64">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 print:hidden lg:px-6">
-          <Link to="/" className="flex items-center gap-2 lg:hidden">
+          <Link to="/bienvenida" className="flex items-center gap-2 lg:hidden">
             <Sprout className="h-5 w-5 text-primary" />
              <span className="font-display text-sm font-bold">AgroFlow</span>
           </Link>
@@ -167,7 +196,8 @@ function AppShellContent({ children }: { children: ReactNode }) {
 
         {/* Nav móvil */}
         <nav className="flex gap-1 overflow-x-auto border-b border-border bg-card px-3 py-2 print:hidden lg:hidden">
-           {PRIMARY_NAV.slice(0, 3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", (to === "/" ? location.pathname === "/" : location.pathname.startsWith(to)) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}<button onClick={() => open()} className="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent"><MessageSquare className="h-3.5 w-3.5" />Asistente IA</button>{PRIMARY_NAV.slice(3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", location.pathname.startsWith(to) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}
+          {MOBILE_NAV.map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", isActive(to, location.pathname) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}
+          <button onClick={() => open()} className="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent"><MessageSquare className="h-3.5 w-3.5" />Asistente IA</button>
         </nav>
 
         <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
@@ -191,5 +221,5 @@ function AppShellContent({ children }: { children: ReactNode }) {
 }
 
 function AssistantNavItem({ open }: { open: () => void }) {
-  return <button onClick={() => open()} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"><MessageSquare className="h-4 w-4 shrink-0" />Asistente IA</button>;
+  return <button onClick={() => open()} className="flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-left text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"><MessageSquare className="h-4 w-4 shrink-0" />Asistente IA (cotizar)</button>;
 }

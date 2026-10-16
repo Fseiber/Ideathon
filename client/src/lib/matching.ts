@@ -1,4 +1,5 @@
-import type { Producto, SolicitudCompra } from "@/data/demo";
+import { fmtTn, type Producto, type SolicitudCompra } from "@/data/demo";
+import type { MatchExplainRequest } from "./api";
 
 export type ResultadoMatch = "compatible" | "condicional" | "incompatible";
 
@@ -100,4 +101,27 @@ function generarResumen(
 export function rankearResultados(analisis: AnalisisMatch[]): AnalisisMatch[] {
   const orden: Record<ResultadoMatch, number> = { compatible: 0, condicional: 1, incompatible: 2 };
   return [...analisis].sort((a, b) => orden[a.resultado] - orden[b.resultado]);
+}
+
+// Datos que se envían a Gemini: solo el resultado del motor de reglas, para que la IA lo explique sin recalcularlo.
+export function pedidoExplicacion(solicitud: SolicitudCompra, resultados: AnalisisMatch[]): MatchExplainRequest {
+  const { variedad, tipoArroz, volumenTn, quebradoMaxPct, humedadMaxPct, paisDestino, incoterm } = solicitud;
+  return {
+    solicitud: { variedad, tipoArroz, volumenTn, quebradoMaxPct, humedadMaxPct, paisDestino, incoterm },
+    resultados: resultados.map((r) => ({ loteId: r.producto.id, empresa: r.producto.empresa, resultado: r.resultado, coincidencias: r.coincidencias, diferencias: r.diferencias, incumplimientos: r.incumplimientos })),
+  };
+}
+
+// Explicación de respaldo cuando Gemini no está disponible.
+export function explicacionPlantilla(solicitud: SolicitudCompra, resultados: AnalisisMatch[]): string {
+  const c = resultados.filter((r) => r.resultado === "compatible");
+  const cond = resultados.filter((r) => r.resultado === "condicional");
+  const inc = resultados.filter((r) => r.resultado === "incompatible");
+  let txt = `Para la solicitud de ${fmtTn(solicitud.volumenTn)} de arroz ${solicitud.tipoArroz.toLowerCase()} ${solicitud.variedad.toLowerCase()} con destino ${solicitud.paisDestino}: `;
+  if (c[0]) txt += `${c.length} lote(s) cumplen todos los requisitos (${c.map((x) => x.producto.id).join(", ")}). Recomendación: solicitar cotización a ${c[0].producto.empresa}. `;
+  else txt += "ningún lote cumple todos los requisitos. ";
+  if (cond.length) txt += `${cond.length} lote(s) podrían negociarse: ${cond.map((x) => `${x.producto.id} (${x.diferencias[0]})`).join("; ")}. `;
+  const motivo = inc[0]?.incumplimientos[0];
+  if (motivo) txt += `${inc.length} lote(s) se descartan por incumplir requisitos obligatorios, principalmente: ${motivo.toLowerCase()}.`;
+  return txt.trim();
 }

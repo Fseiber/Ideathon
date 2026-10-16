@@ -29,11 +29,11 @@ function Documentacion() {
   );
   const todos = docs.flatMap((g) => g.documentos);
   const aplicables = todos.filter((d) => d.estado !== "No aplica");
-  const verificados = aplicables.filter((d) => d.estado === "Verificado").length;
-  const avance = aplicables.length ? Math.round((verificados / aplicables.length) * 100) : 0;
+  const revisados = aplicables.filter((d) => d.estado === "Revisado").length;
+  const avance = aplicables.length ? Math.round((revisados / aplicables.length) * 100) : 0;
 
   const siguiente = (d: Pick<DocumentoRequerido, "id" | "estado">) => {
-    const orden: DocumentoRequerido["estado"][] = ["Pendiente", "En preparación", "Presentado", "Verificado"];
+    const orden: DocumentoRequerido["estado"][] = ["Pendiente", "En preparación", "Presentado", "Revisado"];
     const i = orden.indexOf(d.estado);
     const siguienteEstado = orden[i + 1];
     if (i >= 0 && siguienteEstado) setEstados((s) => ({ ...s, [d.id]: siguienteEstado }));
@@ -43,7 +43,7 @@ function Documentacion() {
     <div>
       <PageHeader
         titulo="Documentación internacional"
-        descripcion="Checklist documental según producto y destino. Los requisitos de país son ejemplos que requieren validación regulatoria antes de una operación real."
+        descripcion="Checklist documental según producto y destino. Los requisitos de país son ejemplos que requieren validación regulatoria antes de una operación real. «Revisado» indica una revisión interna, no una certificación de un tercero."
         acciones={<DemoBadge />}
       />
       <Card className="mb-6">
@@ -61,7 +61,7 @@ function Documentacion() {
           {generado && (
             <div className="flex flex-1 items-center gap-3">
               <Progress value={avance} className="h-2 flex-1" />
-              <span className="text-xs font-medium text-muted-foreground">{verificados}/{aplicables.length} verificados ({avance}%)</span>
+              <span className="text-xs font-medium text-muted-foreground">{revisados}/{aplicables.length} revisados ({avance}%)</span>
             </div>
           )}
         </div>
@@ -88,12 +88,12 @@ function Documentacion() {
                       <p><span className="text-muted-foreground">Fuente:</span> {d.fuente}</p>
                       {d.fechaLimite && <p><span className="text-muted-foreground">Límite:</span> {d.fechaLimite}</p>}
                       {d.costoEstimadoUsd != null && <p><span className="text-muted-foreground">Costo est.:</span> {fmtUsd(d.costoEstimadoUsd)}</p>}
-                      {d.ultimaVerificacion && <p><span className="text-muted-foreground">Verificado:</span> {d.ultimaVerificacion}</p>}
+                      {d.ultimaVerificacion && <p><span className="text-muted-foreground">Revisado:</span> {d.ultimaVerificacion}</p>}
                       {d.adjunto && <p className="flex items-center gap-1 text-info"><Paperclip className="h-3 w-3" />{d.adjunto}</p>}
                     </div>
                     <div className="col-span-6 flex items-center justify-end gap-2 md:col-span-5">
                       <StatusBadge tono={tonoEstado(d.estado)}>{d.estado}</StatusBadge>
-                      {!["Verificado", "No aplica"].includes(d.estado) && <Button size="sm" variant="outline" onClick={() => siguiente(d)}>Avanzar estado</Button>}
+                      {!["Revisado", "No aplica"].includes(d.estado) && <Button size="sm" variant="outline" onClick={() => siguiente(d)}>Avanzar estado</Button>}
                     </div>
                   </div>
                 ))}
