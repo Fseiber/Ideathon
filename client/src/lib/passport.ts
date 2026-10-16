@@ -9,5 +9,5 @@ export function lotHistory(lotId: number, orders: ApiOrder[]) {
 }
 
 export function qualityRows(lot: ApiLot) {
-  return [{ label: "Variedad", value: lot.variety }, { label: "Provincia", value: lot.province }, { label: "Presentación", value: lot.presentation }, { label: "Quebrado", value: lot.brokenPct === null ? "Sin dato" : `${lot.brokenPct}%` }, { label: "Humedad", value: lot.moisturePct === null ? "Sin dato" : `${lot.moisturePct}%` }, { label: "Precio por tonelada", value: centsToUsd(lot.pricePerTonCents).toLocaleString("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }) }];
+  return [{ label: "Molino", value: lot.supplier?.name ?? "No disponible" }, { label: "Variedad", value: lot.variety }, { label: "Provincia", value: lot.province }, { label: "Presentación", value: lot.presentation }, { label: "Quebrado", value: lot.brokenPct === null ? "Sin dato" : `${lot.brokenPct}%` }, { label: "Humedad", value: lot.moisturePct === null ? "Sin dato" : `${lot.moisturePct}%` }, { label: "Precio por tonelada", value: centsToUsd(lot.pricePerTonCents).toLocaleString("es-AR", { style: "currency", currency: "USD", maximumFractionDigits: 0 }) }];
 }

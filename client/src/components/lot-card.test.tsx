@@ -21,4 +21,10 @@ describe("LotCard", () => {
     render(<LotCard lot={lot} />);
     expect(screen.getByRole("link", { name: "Ver pasaporte" })).toHaveAttribute("href", "/lotes/7");
   });
+
+  it("muestra la disponibilidad comercial cuando hay reservas confirmadas", () => {
+    render(<LotCard lot={{ ...lot, tonsAvailable: 50, tonsTotal: 50, tonsReserved: 30, commercialAvailable: 20 }} />);
+    expect(screen.getByText("20 de 50 tn disponibles")).toBeInTheDocument();
+    expect(screen.getByText("30 tn con reserva comercial confirmada")).toBeInTheDocument();
+  });
 });

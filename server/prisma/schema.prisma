@@ -30,8 +30,12 @@ model Lot {
   tonsAvailable Int
   mintTxHash String?
   createdAt DateTime @default(now())
+  supplierCompanyId Int?
+  tonsReserved Int @default(0)
   mill Party @relation(fields: [millId], references: [id])
+  supplier Company? @relation("SupplierLots", fields: [supplierCompanyId], references: [id])
   orders Order[]
+  reservations LotReservation[]
 }
 
 model Order {
@@ -77,4 +81,117 @@ model OrderEvent {
   note String?
   createdAt DateTime @default(now())
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  email String @unique
+  name String
+  passwordHash String
+  roles String // CSV: ADMIN,COMEX,DOCS,FINANCE
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  sessions Session[]
+  audits AuditEvent[]
+  purchaseRequests PurchaseRequest[]
+  reservationsCreated LotReservation[] @relation("ReservationCreatedBy")
+  reservationsConfirmed LotReservation[] @relation("ReservationConfirmedBy")
+}
+
+model Session {
+  id Int @id @default(autoincrement())
+  tokenHash String @unique
+  userId Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Company {
+  id Int @id @default(autoincrement())
+  name String
+  taxId String?
+  country String
+  province String?
+  roles String // CSV: MOLINO,COMPRADOR,EXPORTADOR,INTERMEDIARIO
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  contacts CompanyContact[]
+  lots Lot[] @relation("SupplierLots")
+  purchaseRequests PurchaseRequest[]
+}
+
+model CompanyContact {
+  id Int @id @default(autoincrement())
+  companyId Int
+  name String
+  email String?
+  phone String?
+  position String?
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id Int @id @default(autoincrement())
+  userId Int?
+  action String
+  entity String
+  entityId String
+  data String?
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model PurchaseRequest {
+  id Int @id @default(autoincrement())
+  buyerCompanyId Int
+  product String @default("Arroz")
+  variety String
+  tons Int
+  maxBrokenPct Float?
+  maxMoisturePct Float?
+  presentation String?
+  destination String
+  incoterm String // FOB | CFR
+  requiredBy DateTime?
+  certifications String?
+  status String @default("ABIERTA") // ABIERTA, EN_ANALISIS, COTIZADA, CERRADA, CANCELADA
+  notes String?
+  createdById Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  buyer Company @relation(fields: [buyerCompanyId], references: [id])
+  createdBy User @relation(fields: [createdById], references: [id])
+  reservations LotReservation[]
+
+  @@index([status])
+  @@index([buyerCompanyId])
+}
+
+model LotReservation {
+  id Int @id @default(autoincrement())
+  lotId Int
+  requestId Int?
+  tons Int
+  status String @default("SOLICITADA") // SOLICITADA, CONFIRMADA, LIBERADA, VENCIDA, CONSUMIDA
+  expiresAt DateTime
+  confirmedAt DateTime?
+  confirmedById Int?
+  confirmationChannel String? // EMAIL, TELEFONO, WHATSAPP, PRESENCIAL, OTRO
+  confirmationContact String?
+  confirmationReference String?
+  releasedAt DateTime?
+  releaseReason String?
+  createdById Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lot Lot @relation(fields: [lotId], references: [id])
+  request PurchaseRequest? @relation(fields: [requestId], references: [id])
+  createdBy User @relation("ReservationCreatedBy", fields: [createdById], references: [id])
+  confirmedBy User? @relation("ReservationConfirmedBy", fields: [confirmedById], references: [id])
+
+  @@index([status, expiresAt])
+  @@index([requestId])
+  @@index([lotId])
 }
