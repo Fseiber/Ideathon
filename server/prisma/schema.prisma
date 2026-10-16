@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+
+model Party {
+  id Int @id @default(autoincrement())
+  name String
+  role String
+  stellarPublicKey String @unique
+  millOrders Order[] @relation("MillOrders")
+  buyerOrders Order[] @relation("BuyerOrders")
+  lots Lot[]
+}
+
+model Lot {
+  id Int @id @default(autoincrement())
+  millId Int
+  product String @default("Arroz largo fino")
+  tonsTotal Int
+  tonsAvailable Int
+  mintTxHash String?
+  createdAt DateTime @default(now())
+  mill Party @relation(fields: [millId], references: [id])
+  orders Order[]
+}
+
+model Order {
+  id String @id @default(uuid())
+  millId Int
+  buyerId Int
+  destination String
+  product String @default("Arroz largo fino")
+  tons Int
+  lotId Int
+  pricePerTonCents Int
+  incoterm String
+  freightCents Int @default(0)
+  exportDutyPct Float @default(0)
+  subtotalCents Int
+  totalCents Int
+  advanceCents Int
+  balanceCents Int
+  exportDutyCents Int
+  millNetCents Int
+  status String @default("COTIZADA")
+  escrowFunded Boolean @default(false)
+  stockReserved Boolean @default(false)
+  tokensEscrowed Boolean @default(false)
+  advanceReleased Boolean @default(false)
+  sealHash String?
+  sealTopicId String?
+  sealSequence Int?
+  sealedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  mill Party @relation("MillOrders", fields: [millId], references: [id])
+  buyer Party @relation("BuyerOrders", fields: [buyerId], references: [id])
+  lot Lot @relation(fields: [lotId], references: [id])
+  events OrderEvent[]
+}
+
+model OrderEvent {
+  id Int @id @default(autoincrement())
+  orderId String
+  type String
+  txHash String?
+  note String?
+  createdAt DateTime @default(now())
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}

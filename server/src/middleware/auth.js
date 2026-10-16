@@ -1,0 +1,3 @@
+import { AppError } from '../utils/errors.js';
+export function auth(prisma) { return async (req, _res, next) => { const id = Number(req.header('x-party-id')); if (!Number.isInteger(id) || id <= 0) return next(new AppError('UNAUTHENTICATED', 'Autenticación requerida', 401)); req.party = await prisma.party.findUnique({ where: { id } }); if (!req.party) return next(new AppError('UNAUTHENTICATED', 'Autenticación requerida', 401)); next(); }; }
+export function requireRole(role) { return (req, _res, next) => { if (req.party.role !== role) return next(new AppError('FORBIDDEN', 'No tiene permisos para esta operación', 403)); next(); }; }

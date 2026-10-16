@@ -1,0 +1,25 @@
+{
+  "name": "arrozflow-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test --test-concurrency=1",
+    "stellar:setup": "node scripts/stellarSetup.js",
+    "seed": "prisma db seed",
+    "hedera:setup": "node scripts/hederaSetup.js",
+    "smoke": "node scripts/smokeTestnet.js",
+    "demo:reset": "prisma migrate reset --force && node -e \"console.log('En testnet el stock on-chain del molino se acumula; el stock válido es el de la DB')\""
+  },
+  "prisma": { "seed": "node prisma/seed.js" },
+  "dependencies": {
+    "@prisma/client": "^6.16.0",
+    "@stellar/stellar-sdk": "latest",
+    "@hashgraph/sdk": "latest",
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest"
+  },
+  "devDependencies": { "prisma": "^6.16.0" }
+}
