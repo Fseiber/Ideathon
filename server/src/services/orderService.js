@@ -17,7 +17,7 @@ export async function createOrder(prisma, input) {
   const millId = integerId(input.millId, 'millId');
   const buyerId = integerId(input.buyerId, 'buyerId');
   const tons = positiveInteger(input.tons, 'tons');
-  const pricePerTonUsd = positiveNumber(input.pricePerTonUsd, 'pricePerTonUsd');
+  const explicitPricePerTonUsd = input.pricePerTonUsd === undefined ? undefined : positiveNumber(input.pricePerTonUsd, 'pricePerTonUsd');
   if (!['FOB', 'CFR'].includes(input.incoterm)) throw new AppError('VALIDATION_ERROR', 'incoterm inválido');
   const destination = requiredString(input.destination, 'destination');
   const exportDutyPct = optionalPercent(input.exportDutyPct, 'exportDutyPct');
@@ -29,7 +29,7 @@ export async function createOrder(prisma, input) {
     const available = await prisma.lot.aggregate({ where: { millId }, _sum: { tonsAvailable: true } });
     throw new AppError('INSUFFICIENT_STOCK', `No hay stock suficiente. Toneladas disponibles: ${available._sum.tonsAvailable || 0}`, 409);
   }
-  const pricePerTonCents = Math.round(pricePerTonUsd * 100);
+  const pricePerTonCents = explicitPricePerTonUsd === undefined ? lot.pricePerTonCents : Math.round(explicitPricePerTonUsd * 100);
   const values = quote({ tons, pricePerTonCents, incoterm: input.incoterm, freightCents: Math.round((input.freightUsd || 0) * 100), exportDutyPct });
   return serialize(await prisma.order.create({ data: { millId, buyerId, lotId: lot.id, destination, tons, pricePerTonCents, incoterm: input.incoterm, exportDutyPct, ...values }, include: { events: true } }));
 }

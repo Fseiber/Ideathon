@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { ROLES, type Rol } from "@/data/demo";
+import { getHealth } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { pageHead } from "@/lib/seo";
 import { Card, DemoBadge, PageHeader } from "@/components/ui-kit";
@@ -8,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/configuracion")({
-  head: () => pageHead("Configuración", "Datos de la empresa, perfil del usuario, rol demostrativo y preferencias del prototipo AgroMatch COMEX."),
+  head: () => pageHead("Configuración", "Perfil, rol y estado de las integraciones de AgroFlow."),
   component: Configuracion,
 });
 
@@ -16,6 +19,7 @@ const inp = "h-9 w-full rounded-md border border-input bg-background px-2.5 text
 
 function Configuracion() {
   const { state, dispatch } = useAppStore();
+  const health = useQuery({ queryKey: ["health"], queryFn: getHealth });
   return (
     <div>
       <PageHeader titulo="Configuración" descripcion="Preferencias del prototipo. Los cambios de empresa y perfil son locales y demostrativos." acciones={<DemoBadge />} />
@@ -47,10 +51,13 @@ function Configuracion() {
           <Button variant="outline" onClick={() => { dispatch({ type: "reset" }); toast.success("Datos de demostración restablecidos"); }}>Restablecer datos demo</Button>
         </Card>
         <Card>
-          <h2 className="mb-2 text-base font-semibold">Integraciones futuras</h2>
-          <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {["Entidades bancarias", "Aduana / ARCA", "SENASA", "Stellar / Soroban"].map((i) => <li key={i} className="flex justify-between"><span>{i}</span><span className="text-xs font-medium">Próximamente</span></li>)}
-          </ul>
+          <h2 className="mb-2 text-base font-semibold">Stellar testnet — Activo</h2>
+          <p className="mb-3 text-sm text-muted-foreground">Modo custodial operado por la plataforma.</p>
+          {health.data ? <div className="space-y-2 text-sm"><p>Red: <strong>{health.data.stellarMode}</strong></p><Account label="Emisor de activos" value={health.data.issuerPublic} /><Account label="Escrow" value={health.data.escrowPublic} /></div> : <p className="text-sm text-muted-foreground">No se pudo consultar el estado del backend.</p>}
+        </Card>
+        <Card>
+          <h2 className="mb-2 text-base font-semibold">Hoja de ruta</h2>
+          <p className="text-sm text-muted-foreground">Soroban, multifirma y firma con billetera del comprador.</p>
         </Card>
       </div>
     </div>
@@ -59,4 +66,8 @@ function Configuracion() {
 
 function L({ t, children }: { t: string; children: React.ReactNode }) {
   return <label className="space-y-1"><span className="text-xs font-medium text-muted-foreground">{t}</span>{children}</label>;
+}
+
+function Account({ label, value }: { label: string; value: string | null }) {
+  return <p>{label}: {value ? <a className="inline-flex items-center gap-1 break-all font-mono text-primary hover:underline" href={`https://stellar.expert/explorer/testnet/account/${value}`} target="_blank" rel="noreferrer">{value}<ExternalLink className="h-3 w-3" /></a> : <span className="text-muted-foreground">no disponible</span>}</p>;
 }

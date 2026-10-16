@@ -1,5 +1,5 @@
 export function pageHead(titulo: string, descripcion: string) {
-  const title = `${titulo} — AgroMatch COMEX`;
+  const title = `${titulo} — AgroFlow`;
   return {
     meta: [
       { title },

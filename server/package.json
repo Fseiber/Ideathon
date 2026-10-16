@@ -7,6 +7,7 @@
     "start": "node src/index.js",
     "test": "node --test --test-concurrency=1",
     "stellar:setup": "node scripts/stellarSetup.js",
+    "stellar:topup": "node scripts/topupBuyer.js",
     "seed": "prisma db seed",
     "hedera:setup": "node scripts/hederaSetup.js",
     "smoke": "node scripts/smokeTestnet.js",

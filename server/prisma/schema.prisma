@@ -20,6 +20,12 @@ model Lot {
   id Int @id @default(autoincrement())
   millId Int
   product String @default("Arroz largo fino")
+  variety String @default("Largo fino")
+  province String @default("Corrientes")
+  presentation String @default("Bolsas 25 kg")
+  brokenPct Float?
+  moisturePct Float?
+  pricePerTonCents Int @default(60000)
   tonsTotal Int
   tonsAvailable Int
   mintTxHash String?

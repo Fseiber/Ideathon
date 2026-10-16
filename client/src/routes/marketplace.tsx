@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { FileCheck2, MapPin, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fmtTn, fmtUsd, type Producto } from "@/data/demo";
 import { useAppStore } from "@/lib/store";
@@ -8,6 +9,9 @@ import { pageHead } from "@/lib/seo";
 import { Card, DemoBadge, PageHeader, StatusBadge, tonoEstado } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getLots } from "@/lib/api";
+import { useChatAssistant } from "@/components/chat-assistant";
+import { LotCard } from "@/components/lot-card";
 
 export const Route = createFileRoute("/marketplace")({
   head: () =>
@@ -22,6 +26,8 @@ const sel = "h-9 w-full rounded-md border border-input bg-background px-2 text-s
 
 function Marketplace() {
   const { state } = useAppStore();
+  const { open: openChat } = useChatAssistant();
+  const lotsQuery = useQuery({ queryKey: ["lots"], queryFn: getLots });
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [provincia, setProvincia] = useState("");
@@ -34,6 +40,7 @@ function Marketplace() {
   const [maxHumedad, setMaxHumedad] = useState(16);
   const [cert, setCert] = useState("");
   const [detalle, setDetalle] = useState<Producto | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
 
   const opciones = (k: keyof Producto) => Array.from(new Set(state.productos.map((p) => String(p[k]))));
   const certs = Array.from(new Set(state.productos.flatMap((p) => p.certificaciones)));
@@ -70,9 +77,19 @@ function Marketplace() {
     <div>
       <PageHeader
         titulo="Marketplace B2B agroindustrial"
-        descripcion="Lotes disponibles de productores y molinos. Todos los productos y empresas son ficticios."
-        acciones={<DemoBadge />}
+        descripcion="Lotes tokenizados disponibles de productores y molinos en Stellar testnet."
+        acciones={<StatusBadge tono="success">Testnet · En vivo</StatusBadge>}
       />
+      {lotsQuery.isError && <p className="mb-4 rounded-lg border border-warning/40 bg-warning-muted/50 p-3 text-sm text-warning-foreground">Backend no disponible — mostrando solo datos demo.</p>}
+      <section className="mb-8">
+        <div className="mb-1 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Lotes tokenizados (testnet)</h2><StatusBadge tono="success">Testnet · En vivo</StatusBadge></div>
+        <p className="mb-3 text-sm text-muted-foreground">El asistente asigna el lote disponible del molino; precio fijado por el sistema.</p>
+        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{lotsQuery.data?.filter((lot) => lot.tonsAvailable > 0).map((lot) => <LotCard key={lot.id} lot={lot} action={<Button size="sm" onClick={() => openChat(`Quiero cotizar arroz del lote #${lot.id}: ___ toneladas para ___, FOB o CFR`)}>Pedir cotización</Button>} />)}{lotsQuery.data && lotsQuery.data.filter((lot) => lot.tonsAvailable > 0).length === 0 && !lotsQuery.isError && <Card><p className="text-sm text-muted-foreground">No hay lotes tokenizados disponibles.</p></Card>}</div>
+      </section>
+      <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Marketplace de ejemplo (demo)</h2><DemoBadge /></div>
+      {!showDemo && <Button variant="ghost" size="sm" onClick={() => setShowDemo(true)}>Ver lotes de ejemplo (demo)</Button>}
+      {showDemo && <>
+      <div className="mb-3 mt-6 flex items-center justify-between"><h2 className="text-lg font-semibold">Marketplace de ejemplo</h2><DemoBadge /></div>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <Card className="h-fit space-y-4 lg:sticky lg:top-20">
           <div className="flex items-center justify-between">
@@ -199,7 +216,7 @@ function Marketplace() {
             </>
           )}
         </DialogContent>
-      </Dialog>
+      </Dialog></>}
     </div>
   );
 }

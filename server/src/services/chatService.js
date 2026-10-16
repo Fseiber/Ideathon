@@ -36,7 +36,7 @@ export async function handleChat({ buyerId, messages }, deps = {}) {
   const mill = await prisma.party.findFirst({ where: { role: 'MOLINO' }, orderBy: { id: 'asc' } });
   if (!mill) throw new AppError('NOT_FOUND', 'Molino no encontrado', 404);
   try {
-    const order = await createOrder(prisma, { millId: mill.id, buyerId, destination: intent.destination, tons: intent.tons, incoterm: intent.incoterm, pricePerTonUsd: Number(process.env.DEMO_PRICE_PER_TON_USD || 600), freightUsd: Number(process.env.DEMO_FREIGHT_USD || 1500), exportDutyPct: Number(process.env.DEMO_EXPORT_DUTY_PCT || 5) });
+    const order = await createOrder(prisma, { millId: mill.id, buyerId, destination: intent.destination, tons: intent.tons, incoterm: intent.incoterm, freightUsd: Number(process.env.DEMO_FREIGHT_USD || 1500), exportDutyPct: Number(process.env.DEMO_EXPORT_DUTY_PCT || 5) });
     return { reply: quoteReply(result.reply, order), order, agent };
   } catch (error) {
     if (error instanceof AppError && error.code === 'INSUFFICIENT_STOCK') { const lot = await prisma.lot.findFirst({ where: { millId: mill.id }, orderBy: { id: 'asc' } }); return { reply: `No tengo stock suficiente: hay ${lot?.tonsAvailable || 0} tn disponibles.`, order: null, agent }; }

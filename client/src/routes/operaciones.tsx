@@ -22,13 +22,14 @@ function Operaciones() {
   const { state, dispatch } = useAppStore();
   const [q, setQ] = useState("");
   const [sel, setSel] = useState<string | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
   const op = state.operaciones.find((o) => o.id === sel) ?? null;
   const lista = state.operaciones.filter((o) => !q || `${o.id} ${o.comprador} ${o.producto}`.toLowerCase().includes(q.toLowerCase()));
 
   const avanzar = (o: Operacion) => {
     if (o.hitoActual >= 7) return;
     const h = o.hitoActual + 1;
-    const patch: Partial<Operacion> = { hitoActual: h, estadoLogistico: ESTADO_POR_HITO[h - 1] };
+    const patch: Partial<Operacion> = { hitoActual: h, estadoLogistico: ESTADO_POR_HITO[h - 1] ?? o.estadoLogistico };
     if (h >= 4) { patch.cantidadEmbarcadaTn = o.cantidadContratadaTn; patch.valorFacturadoUsd = o.cantidadContratadaTn * o.precioPactadoTnUsd; patch.permisoEmbarque = o.permisoEmbarque ?? `PE-${o.id.slice(-3)}-DEMO`; }
     if (h >= 5) patch.estadoDocumental = "Presentado";
     if (h >= 6) patch.estadoFinanciero = "Cobro recibido";
@@ -48,8 +49,10 @@ function Operaciones() {
 
   return (
     <div>
-      <PageHeader titulo="Operaciones y embarques" descripcion="Operaciones generadas a partir de cotizaciones aceptadas." acciones={<DemoBadge />} />
-      <RealOrdersTable />
+       <PageHeader titulo="Operaciones" descripcion="Órdenes reales y liquidaciones en Stellar testnet." />
+       <RealOrdersTable />
+       {!showDemo && <Button variant="ghost" size="sm" onClick={() => setShowDemo(true)}>Ver operaciones de ejemplo (demo)</Button>}
+       {showDemo && <>
       <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">Operaciones de ejemplo (demo)</h2><DemoBadge /></div>
       <Card>
         <div className="relative mb-4 max-w-md">
@@ -116,7 +119,7 @@ function Operaciones() {
             </>
           )}
         </SheetContent>
-      </Sheet>
+       </Sheet></>}
     </div>
   );
 }

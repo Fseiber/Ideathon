@@ -86,6 +86,7 @@ export interface ApiSeal {
 
 export interface ApiOrder {
   id: string;
+  createdAt?: string;
   status: OrderStatus;
   lotId: number;
   tokenCode: "ARROZ";
@@ -93,7 +94,10 @@ export interface ApiOrder {
   tons: number;
   incoterm: "FOB" | "CFR";
   subtotalCents: number;
+  pricePerTonCents: number;
   freightCents: number;
+  exportDutyPct: number;
+  exportDutyCents: number;
   totalCents: number;
   advanceCents: number;
   balanceCents: number;
@@ -104,12 +108,20 @@ export interface ApiOrder {
 export interface ApiLot {
   id: number;
   product: string;
+  variety: string;
+  province: string;
+  presentation: string;
+  brokenPct: number | null;
+  moisturePct: number | null;
+  pricePerTonCents: number;
   tonsTotal: number;
   tonsAvailable: number;
   mintTxHash: string;
   explorerUrl: string | null;
   createdAt: string;
 }
+
+export type LotAttributes = { variety?: string; province?: string; presentation?: string; brokenPct?: number; moisturePct?: number; pricePerTonUsd?: number };
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -122,18 +134,20 @@ export interface ChatResponse {
   agent: "gemini" | "stub";
 }
 
-export interface HealthResponse {
+export interface Health {
   ok: boolean;
   stellarMode: string;
-  hederaMode: string;
+  hederaMode: "mock" | "testnet" | "off";
   agentMode: string;
   db: string;
   issuerPublic: string | null;
   escrowPublic: string | null;
 }
 
-export const getHealth = () => api<HealthResponse>("/health");
+export type HealthResponse = Health;
+export const getHealth = () => api<Health>("/health");
 export const getOrders = (party: Party) => api<ApiOrder[]>("/orders", { party });
+export const createLot = (tons: number, product?: string, attributes?: LotAttributes) => api<ApiLot>("/lots", { method: "POST", party: 1, body: { tons, product, ...attributes } });
 export const getOrder = (id: string, party: Party) => api<ApiOrder>(`/orders/${id}`, { party });
 export const verifyOrder = (id: string) => api<unknown>(`/orders/${id}/verify`);
 export const fundOrder = (id: string) => api<ApiOrder>(`/orders/${id}/fund`, { method: "POST", party: 2 });

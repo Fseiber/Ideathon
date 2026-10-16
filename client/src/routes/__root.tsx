@@ -80,17 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AgroMatch COMEX — Plataforma inteligente de comercialización agroindustrial" },
+      { title: "AgroFlow — Arroz del NEA tokenizado y liquidado en Stellar" },
       {
         name: "description",
         content:
-          "Prototipo demostrativo de AgroMatch COMEX: matching entre compradores y productores, calculadora de costos de exportación, cotizaciones, documentación y trazabilidad. Ideathon NEA TECH 2026.",
+          "Arroz del NEA tokenizado y liquidado en Stellar. Lotes, órdenes y liquidación DvP en testnet.",
       },
-      { property: "og:title", content: "AgroMatch COMEX" },
+      { property: "og:title", content: "AgroFlow — Arroz del NEA tokenizado y liquidado en Stellar" },
       {
         property: "og:description",
-        content:
-          "Plataforma inteligente de comercialización y exportación agroindustrial. Prototipo demo con datos ficticios.",
+        content: "Arroz del NEA tokenizado y liquidado en Stellar testnet.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

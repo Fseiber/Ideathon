@@ -13,6 +13,7 @@ function fmtUsd(cents: number) {
 
 export function RealOrdersTable() {
   const [selected, setSelected] = useState<ApiOrder | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const ordersQuery = useQuery({
     queryKey: ["orders"],
     queryFn: () => getOrders(2),
@@ -27,7 +28,8 @@ export function RealOrdersTable() {
       </div>
       {ordersQuery.isError && <p className="mb-3 rounded-lg border border-warning/40 bg-warning-muted/50 p-3 text-sm text-warning-foreground">Backend no disponible — no se pudieron cargar las órdenes reales.</p>}
       <Card>
-        {ordersQuery.data?.length ? <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left text-xs text-muted-foreground">{["#ID", "Toneladas", "Destino", "Incoterm", "Total USD", "Anticipo", "Saldo", "Estado", ""].map((heading) => <th key={heading} className="pb-2 pr-3 font-medium">{heading}</th>)}</tr></thead><tbody>{ordersQuery.data.map((order) => <tr key={order.id} className="border-b border-border/60 last:border-0"><td className="py-3 pr-3 font-mono text-xs">#{order.id}</td><td className="pr-3">{order.tons} tn</td><td className="pr-3">{order.destination}</td><td className="pr-3">{order.incoterm}</td><td className="pr-3">{fmtUsd(order.totalCents)}</td><td className="pr-3">{fmtUsd(order.advanceCents)}</td><td className="pr-3">{fmtUsd(order.balanceCents)}</td><td className="pr-3"><StatusBadge tono="info">{STATUS_LABEL[order.status]}</StatusBadge></td><td><Button size="sm" variant="outline" onClick={() => setSelected(order)}>Detalle</Button></td></tr>)}</tbody></table></div> : !ordersQuery.isError && <p className="text-sm text-muted-foreground">Todavía no hay órdenes. Pedí una cotización desde el Marketplace.</p>}
+        {ordersQuery.data?.length ? <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left text-xs text-muted-foreground">{["#ID", "Toneladas", "Destino", "Incoterm", "Total USD", "Anticipo", "Saldo", "Estado", ""].map((heading) => <th key={heading} className="pb-2 pr-3 font-medium">{heading}</th>)}</tr></thead><tbody>{(showAll ? ordersQuery.data : ordersQuery.data.slice(0, 5)).map((order) => <tr key={order.id} className="border-b border-border/60 last:border-0"><td className="py-3 pr-3 font-mono text-xs">#{order.id}</td><td className="pr-3">{order.tons} tn</td><td className="pr-3">{order.destination}</td><td className="pr-3">{order.incoterm}</td><td className="pr-3">{fmtUsd(order.totalCents)}</td><td className="pr-3">{fmtUsd(order.advanceCents)}</td><td className="pr-3">{fmtUsd(order.balanceCents)}</td><td className="pr-3"><StatusBadge tono="info">{STATUS_LABEL[order.status]}</StatusBadge></td><td><Button size="sm" variant="outline" onClick={() => setSelected(order)}>Detalle</Button></td></tr>)}</tbody></table></div> : !ordersQuery.isError && <p className="text-sm text-muted-foreground">Todavía no hay órdenes. Pedí una cotización desde el Marketplace.</p>}
+        {ordersQuery.data && ordersQuery.data.length > 5 && <Button variant="ghost" size="sm" className="mt-3" onClick={() => setShowAll((value) => !value)}>{showAll ? "Ver menos" : "Ver todas"}</Button>}
       </Card>
       {selected && <RealOrderSheet order={selected} open={selected !== null} onOpenChange={(open) => !open && setSelected(null)} />}
     </section>

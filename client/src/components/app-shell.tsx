@@ -3,9 +3,9 @@ import {
   Bell,
   Building2,
   Calculator,
-  FileText,
-  Files,
+  ChevronDown,
   LayoutDashboard,
+  MessageSquare,
   Package,
   RefreshCcw,
   Scale,
@@ -16,6 +16,7 @@ import {
   Sprout,
   Truck,
   Waypoints,
+  type LucideIcon,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ROLES, type Rol } from "@/data/demo";
@@ -30,24 +31,37 @@ import {
 } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { ChatAssistantProvider, useChatAssistant } from "@/components/chat-assistant";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const NAV = [
+const PRIMARY_NAV: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingCart },
-  { to: "/mis-productos", label: "Mis productos", icon: Package },
-  { to: "/solicitudes", label: "Solicitudes de compra", icon: FileText },
-  { to: "/matching", label: "Matching inteligente", icon: Sparkles },
-  { to: "/calculadora", label: "Calculadora COMEX", icon: Calculator },
-  { to: "/cotizaciones", label: "Cotizaciones", icon: Files },
-  { to: "/documentacion", label: "Documentación", icon: Files },
-  { to: "/operaciones", label: "Operaciones y embarques", icon: Truck },
-  { to: "/conciliacion", label: "Conciliación financiera", icon: Scale },
-  { to: "/trazabilidad", label: "Trazabilidad", icon: Waypoints },
-  { to: "/configuracion", label: "Configuración", icon: Settings },
-] as const;
+  { to: "/mis-productos", label: "Mis lotes", icon: Package },
+  { to: "/operaciones", label: "Operaciones", icon: Truck },
+  { to: "/trazabilidad", label: "Verificación Stellar", icon: Waypoints },
+];
+
+const ROADMAP_NAV: { to: string; label: string; icon: LucideIcon }[] = [
+  { to: "/matching", label: "Matching avanzado", icon: Sparkles },
+  { to: "/calculadora", label: "Calculadora COMEX completa", icon: Calculator },
+  { to: "/documentacion", label: "Documentación internacional", icon: Package },
+  { to: "/conciliacion", label: "Conciliación SECOEXPO", icon: Scale },
+];
+
+function NavItem({ item, pathname }: { item: { to: string; label: string; icon: LucideIcon }; pathname: string }) {
+  const Icon = item.icon;
+  const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+  return <Link to={item.to} className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")}><Icon className="h-4 w-4 shrink-0" />{item.label}</Link>;
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return <ChatAssistantProvider><AppShellContent>{children}</AppShellContent></ChatAssistantProvider>;
+}
+
+function AppShellContent({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAppStore();
+  const { open } = useChatAssistant();
   const location = useLocation();
   const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState("");
@@ -63,29 +77,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Sprout className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <p className="font-display text-sm font-bold leading-tight">AgroMatch COMEX</p>
+           <p className="font-display text-sm font-bold leading-tight">AgroFlow</p>
             <p className="text-[11px] text-sidebar-foreground/60">Prototipo demo · NEA TECH 2026</p>
           </div>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2 scrollbar-thin">
-          {NAV.map(({ to, label, icon: Icon }) => {
-            const activo = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  activo
-                    ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {label}
-              </Link>
-            );
-          })}
+             {PRIMARY_NAV.slice(0, 3).map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}
+             <AssistantNavItem open={open} />
+             {PRIMARY_NAV.slice(3).map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}
+             <Collapsible defaultOpen={false}>
+             <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50 hover:bg-sidebar-accent/60"><span>Próximamente</span><ChevronDown className="h-3.5 w-3.5" /></CollapsibleTrigger>
+             <CollapsibleContent className="space-y-0.5 pt-0.5">{ROADMAP_NAV.map((item) => <NavItem key={item.to} item={item} pathname={location.pathname} />)}</CollapsibleContent>
+           </Collapsible>
+           <NavItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} pathname={location.pathname} />
         </nav>
         <div className="border-t border-sidebar-border p-4">
           <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-sidebar-foreground/50">
@@ -112,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
           <Link to="/" className="flex items-center gap-2 lg:hidden">
             <Sprout className="h-5 w-5 text-primary" />
-            <span className="font-display text-sm font-bold">AgroMatch</span>
+             <span className="font-display text-sm font-bold">AgroFlow</span>
           </Link>
           <div className="relative hidden max-w-md flex-1 sm:block">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -126,11 +130,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                   });
                 }
               }}
-              placeholder="Buscar productos, solicitudes, operaciones…"
+               placeholder="Buscar productos, lotes, operaciones…"
               className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/30"
             />
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <button onClick={() => open()} className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-accent" aria-label="Asistente">
+              <MessageSquare className="h-4 w-4" />
+              <span>Asistente</span>
+            </button>
             <button
               onClick={() =>
                 toast.info("Notificaciones (demo)", {
@@ -159,28 +167,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         {/* Nav móvil */}
         <nav className="flex gap-1 overflow-x-auto border-b border-border bg-card px-3 py-2 lg:hidden">
-          {NAV.map(({ to, label, icon: Icon }) => {
-            const activo = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
-            return (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  "flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs",
-                  activo ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent",
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {label}
-              </Link>
-            );
-          })}
+           {PRIMARY_NAV.slice(0, 3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", (to === "/" ? location.pathname === "/" : location.pathname.startsWith(to)) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}<button onClick={() => open()} className="flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent"><MessageSquare className="h-3.5 w-3.5" />Asistente IA</button>{PRIMARY_NAV.slice(3).map(({ to, label, icon: Icon }) => <Link key={to} to={to} className={cn("flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs", location.pathname.startsWith(to) ? "bg-primary font-semibold text-primary-foreground" : "text-muted-foreground hover:bg-accent")}><Icon className="h-3.5 w-3.5" />{label}</Link>)}
         </nav>
 
         <main className="flex-1 px-4 py-6 lg:px-8">{children}</main>
 
         <footer className="border-t border-border px-4 py-4 text-center text-xs text-muted-foreground lg:px-8">
-          AgroMatch COMEX — Prototipo demostrativo con datos ficticios · Ideathon NEA TECH 2026 ·{" "}
+          AgroFlow — Plataforma B2B en Stellar testnet · Ideathon NEA TECH 2026 ·{" "}
           <button
             className="inline-flex items-center gap-1 underline hover:text-foreground"
             onClick={() => {
@@ -195,4 +188,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Toaster richColors position="bottom-right" />
     </div>
   );
+}
+
+function AssistantNavItem({ open }: { open: () => void }) {
+  return <button onClick={() => open()} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"><MessageSquare className="h-4 w-4 shrink-0" />Asistente IA</button>;
 }

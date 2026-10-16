@@ -7,10 +7,10 @@ import { BlockchainPanel } from "./blockchain-panel";
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
-  return { ...actual, sealOrder: vi.fn(), verifyOrder: vi.fn() };
+  return { ...actual, getHealth: vi.fn(), sealOrder: vi.fn(), verifyOrder: vi.fn() };
 });
 
-const { sealOrder, verifyOrder } = await import("@/lib/api");
+const { getHealth, sealOrder, verifyOrder } = await import("@/lib/api");
 
 const baseOrder: ApiOrder = {
   id: "order-1",
@@ -21,7 +21,10 @@ const baseOrder: ApiOrder = {
   tons: 20,
   incoterm: "CFR",
   subtotalCents: 1200000,
+  pricePerTonCents: 60000,
   freightCents: 150000,
+  exportDutyPct: 5,
+  exportDutyCents: 60000,
   totalCents: 1350000,
   advanceCents: 405000,
   balanceCents: 945000,
@@ -35,15 +38,16 @@ function renderPanel(order = baseOrder) {
 }
 
 beforeEach(() => {
+  vi.mocked(getHealth).mockResolvedValue({ ok: true, stellarMode: "testnet", hederaMode: "mock", agentMode: "stub", db: "ok", issuerPublic: "GAAGISSUER", escrowPublic: "GASAIESCROW" });
   vi.mocked(sealOrder).mockReset();
   vi.mocked(verifyOrder).mockReset();
 });
 
 describe("BlockchainPanel", () => {
-  it("renders Stellar and HashScan links", () => {
+  it("renders Stellar and HashScan links", async () => {
     renderPanel();
     expect(screen.getAllByRole("link").filter((link) => link.textContent?.includes("Ver en StellarExpert"))).toHaveLength(4);
-    expect(screen.getByRole("link", { name: /Ver en HashScan/ })).toHaveAttribute("href", baseOrder.seal?.hashscanUrl);
+    expect(await screen.findByRole("link", { name: /Ver en HashScan/ })).toHaveAttribute("href", baseOrder.seal?.hashscanUrl);
   });
 
   it("renders backend cent amounts as USD", () => {
@@ -52,17 +56,29 @@ describe("BlockchainPanel", () => {
     expect(screen.getByText(/9\.450|9,450/)).toBeInTheDocument();
   });
 
+  it("hides Hedera when health reports it off", async () => {
+    vi.mocked(getHealth).mockResolvedValue({ ok: true, stellarMode: "testnet", hederaMode: "off", agentMode: "stub", db: "ok", issuerPublic: "GAAGISSUER", escrowPublic: "GASAIESCROW" });
+    renderPanel({ ...baseOrder, seal: null });
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Sellar en Hedera" })).not.toBeInTheDocument());
+    expect(screen.queryByText(/Hedera/)).not.toBeInTheDocument();
+  });
+
+  it("links Stellar asset accounts from health", async () => {
+    renderPanel();
+    expect(await screen.findByRole("link", { name: /GAAGISSUER/ })).toHaveAttribute("href", "https://stellar.expert/explorer/testnet/account/GAAGISSUER");
+  });
+
   it("allows sealing a completed unsealed order", async () => {
     vi.mocked(sealOrder).mockResolvedValue({ ...baseOrder, seal: baseOrder.seal });
     renderPanel({ ...baseOrder, seal: null });
-    fireEvent.click(screen.getByRole("button", { name: "Sellar en Hedera" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Sellar en Hedera" }));
     await waitFor(() => expect(sealOrder).toHaveBeenCalledWith("order-1"));
   });
 
   it("shows the not-sealed message for a 409 verification error", async () => {
     vi.mocked(verifyOrder).mockRejectedValue(new ApiError("NOT_SEALED", "La orden no está sellada", 409));
     renderPanel();
-    fireEvent.click(screen.getByRole("button", { name: "Verificar integridad" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Verificar integridad" }));
     expect(await screen.findByText("La orden aún no está sellada")).toBeInTheDocument();
   });
 });

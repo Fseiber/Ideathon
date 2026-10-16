@@ -15,7 +15,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
 const { fundOrder, dispatchOrder, confirmDelivery } = await import("@/lib/api");
 const { useAppStore } = await import("@/lib/store");
 
-const order: ApiOrder = { id: "order-1", status: "COTIZADA", lotId: 1, tokenCode: "ARROZ", destination: "Asunción, PY", tons: 20, incoterm: "CFR", subtotalCents: 1200000, freightCents: 150000, totalCents: 1350000, advanceCents: 405000, balanceCents: 945000, events: [], seal: null };
+const order: ApiOrder = { id: "order-1", status: "COTIZADA", lotId: 1, tokenCode: "ARROZ", destination: "Asunción, PY", tons: 20, incoterm: "CFR", subtotalCents: 1200000, pricePerTonCents: 60000, freightCents: 150000, exportDutyPct: 5, exportDutyCents: 60000, totalCents: 1350000, advanceCents: 405000, balanceCents: 945000, events: [], seal: null };
 
 function renderSheet(value: ApiOrder = order) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -28,7 +28,7 @@ describe("RealOrderSheet", () => {
   it("does not submit twice on a double click", async () => {
     vi.mocked(fundOrder).mockImplementation(() => new Promise<ApiOrder>(() => {}));
     renderSheet();
-    const button = screen.getByRole("button", { name: "Fondear escrow (USDC)" });
+    const button = screen.getByRole("button", { name: "Fondear escrow (USDC de prueba)" });
     expect(button).not.toBeDisabled();
     fireEvent.click(button);
     fireEvent.click(button);
@@ -46,7 +46,7 @@ describe("RealOrderSheet", () => {
   it("shows Stellar errors", async () => {
     vi.mocked(fundOrder).mockRejectedValue(new ApiError("STELLAR_ERROR", "x", 502));
     renderSheet();
-    fireEvent.click(screen.getByRole("button", { name: "Fondear escrow (USDC)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Fondear escrow (USDC de prueba)" }));
     expect(await screen.findByText("Stellar testnet no respondió. Reintentá en unos segundos.")).toBeInTheDocument();
   });
 

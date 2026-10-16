@@ -1,8 +1,8 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ExternalLink, Fingerprint, ShieldCheck } from "lucide-react";
 
-import { ApiError, centsToUsd, sealOrder, shortHash, verifyOrder, type ApiOrder } from "@/lib/api";
+import { ApiError, centsToUsd, getHealth, sealOrder, shortHash, verifyOrder, type ApiOrder } from "@/lib/api";
 import { EVENT_LABEL, eventLink, sortEvents, STATUS_LABEL } from "@/lib/order-view";
 import { Card, StatusBadge } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,9 @@ function fmtUsd(cents: number) {
 
 export function BlockchainPanel({ order }: { order: ApiOrder }) {
   const queryClient = useQueryClient();
+  const healthQuery = useQuery({ queryKey: ["health"], queryFn: getHealth });
+  const health = healthQuery.data;
+  const showHedera = Boolean(health && !healthQuery.isError && health.hederaMode !== "off");
   const [sealing, setSealing] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verification, setVerification] = useState<Verification | null>(null);
@@ -71,7 +74,7 @@ export function BlockchainPanel({ order }: { order: ApiOrder }) {
       <Card>
         <h3 className="mb-4 flex items-center gap-2 text-base font-semibold"><Fingerprint className="h-5 w-5 text-info" />Historial blockchain</h3>
         <ol className="space-y-4 border-l-2 border-border pl-5">
-          {sortEvents(order.events).map((event) => {
+          {sortEvents(order.events).filter((event) => showHedera || !["SEAL_HEDERA", "SEAL_ERROR"].includes(event.type)).map((event) => {
             const link = eventLink(event);
             return (
               <li key={`${event.type}-${event.createdAt}`} className="relative">
@@ -96,7 +99,7 @@ export function BlockchainPanel({ order }: { order: ApiOrder }) {
         </ol>
       </Card>
 
-      <Card>
+      {showHedera && <Card>
         <h3 className="mb-3 text-base font-semibold">Sello de integridad</h3>
         {order.seal ? (
           <div className="space-y-3 text-sm">
@@ -120,15 +123,27 @@ export function BlockchainPanel({ order }: { order: ApiOrder }) {
             {sealMessage && <p className="text-sm text-warning-foreground">{sealMessage}</p>}
           </div>
         ) : <p className="text-sm text-muted-foreground">Se sella al completar la liquidación</p>}
-      </Card>
+      </Card>}
 
-      <p className="rounded-lg border border-info/30 bg-info-muted/50 p-3 text-sm text-muted-foreground">Escrow custodial en Stellar testnet. Soroban y multifirma: hoja de ruta.</p>
+      {health?.issuerPublic && health.escrowPublic && <Card>
+        <h3 className="mb-3 text-base font-semibold">Cuentas en Stellar testnet</h3>
+        <div className="grid gap-3 text-sm md:grid-cols-2">
+          <AccountLink label="Emisor de activos" account={health.issuerPublic} />
+          <AccountLink label="Escrow" account={health.escrowPublic} />
+        </div>
+      </Card>}
+
+      <p className="rounded-lg border border-info/30 bg-info-muted/50 p-3 text-sm text-muted-foreground">Escrow custodial operado por la plataforma. USDC y ARROZ son activos de prueba emitidos por la plataforma en Stellar testnet (no es USDC de Circle). Firma del comprador con billetera propia, multifirma y Soroban: hoja de ruta.</p>
     </div>
   );
 }
 
 function Summary({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className={mono ? "font-mono text-sm" : "text-sm font-medium"}>{value}</p></div>;
+}
+
+function AccountLink({ label, account }: { label: string; account: string }) {
+  return <div className="rounded-lg border border-border p-3"><p className="text-xs text-muted-foreground">{label}</p><a className="inline-flex items-center gap-1 break-all font-mono text-sm text-primary hover:underline" href={`https://stellar.expert/explorer/testnet/account/${account}`} target="_blank" rel="noreferrer">{account}<ExternalLink className="h-3 w-3 shrink-0" /></a></div>;
 }
 
 function isVerification(value: unknown): value is Verification {
