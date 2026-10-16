@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppStoreProvider } from "@/lib/store";
 import { AppShell } from "@/components/app-shell";
+import { ChatAssistantProvider } from "@/components/chat-assistant";
 
 function NotFoundComponent() {
   return (
@@ -131,9 +132,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppStoreProvider>
-        <AppShell>
-          <Outlet />
-        </AppShell>
+        <ChatAssistantProvider>
+          <AppShell>
+            <Outlet />
+          </AppShell>
+        </ChatAssistantProvider>
       </AppStoreProvider>
     </QueryClientProvider>
   );

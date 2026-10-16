@@ -155,4 +155,10 @@ export const dispatchOrder = (id: string) => api<ApiOrder>(`/orders/${id}/dispat
 export const confirmDelivery = (id: string) => api<ApiOrder>(`/orders/${id}/confirm-delivery`, { method: "POST", party: 2 });
 export const sealOrder = (id: string) => api<ApiOrder>(`/orders/${id}/seal`, { method: "POST" });
 export const getLots = () => api<ApiLot[]>("/lots");
+export interface MatchExplainRequest {
+  solicitud: { variedad: string; tipoArroz: string; volumenTn: number; quebradoMaxPct: number; humedadMaxPct: number; paisDestino: string; incoterm: string };
+  resultados: { loteId: string; empresa: string; resultado: "compatible" | "condicional" | "incompatible"; coincidencias: string[]; diferencias: string[]; incumplimientos: string[] }[];
+}
+export interface MatchExplainResponse { explanation: string | null; agent: "gemini" | "stub" }
+export const explainMatch = (body: MatchExplainRequest) => api<MatchExplainResponse>("/matching/explain", { method: "POST", party: 2, body });
 export const sendChat = (messages: ChatMessage[], lotId?: number) => api<ChatResponse>("/chat", { method: "POST", party: 2, body: { messages, ...(lotId ? { lotId } : {}) } });

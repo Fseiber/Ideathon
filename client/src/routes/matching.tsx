@@ -3,7 +3,8 @@ import { CheckCircle2, CircleAlert, CircleX, Lightbulb, Scale, Sparkles } from "
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { INCOTERMS, fmtTn, type SolicitudCompra } from "@/data/demo";
-import { analizarCompatibilidad, rankearResultados, type AnalisisMatch, type ResultadoMatch } from "@/lib/matching";
+import { analizarCompatibilidad, explicacionPlantilla, pedidoExplicacion, rankearResultados, type AnalisisMatch, type ResultadoMatch } from "@/lib/matching";
+import { explainMatch } from "@/lib/api";
 import { useAppStore } from "@/lib/store";
 import { pageHead } from "@/lib/seo";
 import { Card, DemoBadge, PageHeader } from "@/components/ui-kit";
@@ -12,8 +13,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/matching")({
-  validateSearch: (s: Record<string, unknown>): { solicitud?: string } => ({
-    solicitud: typeof s.solicitud === "string" ? s.solicitud : undefined,
+  validateSearch: (s: Record<string, unknown>): { solicitud?: string | undefined } => ({
+    solicitud: typeof s["solicitud"] === "string" ? s["solicitud"] : undefined,
   }),
   head: () =>
     pageHead(
@@ -48,7 +49,8 @@ function Matching() {
   });
   const [resultados, setResultados] = useState<AnalisisMatch[] | null>(null);
   const [comparar, setComparar] = useState<AnalisisMatch | null>(null);
-  const [analisis, setAnalisis] = useState<string | null>(null);
+  const [analisis, setAnalisis] = useState<{ texto: string; fuente: "gemini" | "plantilla" } | null>(null);
+  const [analizando, setAnalizando] = useState(false);
 
   useEffect(() => {
     if (!solicitudId) return;
@@ -84,17 +86,17 @@ function Matching() {
     setAnalisis(null);
   };
 
-  const analizarOportunidad = () => {
+  const analizarOportunidad = async () => {
     if (!resultados) return;
-    const c = resultados.filter((r) => r.resultado === "compatible");
-    const cond = resultados.filter((r) => r.resultado === "condicional");
-    const inc = resultados.filter((r) => r.resultado === "incompatible");
-    let txt = `Para la solicitud de ${fmtTn(form.volumenTn)} de arroz ${form.tipoArroz.toLowerCase()} ${form.variedad.toLowerCase()} con destino ${form.paisDestino}: `;
-    if (c.length) txt += `${c.length} lote(s) cumplen todos los requisitos (${c.map((x) => x.producto.id).join(", ")}). Recomendación: solicitar cotización a ${c[0].producto.empresa}. `;
-    else txt += "ningún lote cumple todos los requisitos. ";
-    if (cond.length) txt += `${cond.length} lote(s) podrían negociarse: ${cond.map((x) => `${x.producto.id} (${x.diferencias[0]})`).join("; ")}. `;
-    if (inc.length) txt += `${inc.length} lote(s) se descartan por incumplir requisitos obligatorios, principalmente: ${inc[0].incumplimientos[0].toLowerCase()}.`;
-    setAnalisis(txt);
+    setAnalizando(true);
+    try {
+      const { explanation } = await explainMatch(pedidoExplicacion(form, resultados));
+      setAnalisis(explanation ? { texto: explanation, fuente: "gemini" } : { texto: explicacionPlantilla(form, resultados), fuente: "plantilla" });
+    } catch {
+      setAnalisis({ texto: explicacionPlantilla(form, resultados), fuente: "plantilla" });
+    } finally {
+      setAnalizando(false);
+    }
   };
 
   return (
@@ -156,12 +158,13 @@ function Matching() {
                     </span>
                   ))}
                 </div>
-                <Button variant="outline" onClick={analizarOportunidad}><Lightbulb className="h-4 w-4" />Analizar oportunidad</Button>
+                <Button variant="outline" onClick={analizarOportunidad} disabled={analizando}><Lightbulb className="h-4 w-4" />{analizando ? "Analizando…" : "Explicar resultado"}</Button>
               </div>
               {analisis && (
                 <Card className="mb-4 border-info/30 bg-info-muted/50">
-                  <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-info"><Lightbulb className="h-3.5 w-3.5" />Análisis de oportunidad (reglas demo, sin IA real)</p>
-                  <p className="text-sm leading-relaxed">{analisis}</p>
+                  <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-info"><Lightbulb className="h-3.5 w-3.5" />{analisis.fuente === "gemini" ? "Explicación redactada por Gemini" : "Explicación automática (plantilla)"}</p>
+                  <p className="text-sm leading-relaxed">{analisis.texto}</p>
+                  <p className="mt-2 text-[11px] text-muted-foreground">{analisis.fuente === "gemini" ? "La clasificación la calcula el motor de reglas; la IA solo la explica y no puede modificarla." : "Gemini no está disponible: se muestra un resumen generado a partir de las reglas."}</p>
                 </Card>
               )}
               <div className="grid gap-4 lg:grid-cols-2">

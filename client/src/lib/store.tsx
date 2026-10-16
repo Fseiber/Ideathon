@@ -76,7 +76,7 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
-const STORAGE_KEY = "agromatch-comex-demo-v1";
+const STORAGE_KEY = "agromatch-comex-demo-v4";
 
 function loadState(): AppState {
   if (typeof window === "undefined") return initialState;

@@ -1,6 +1,6 @@
 # API de AgroFlow
 
-Contrato derivado de `server/src/routes/*.js`, `server/src/services/orderService.js`, `lotService.js`, `chatService.js` y `app.js`. El servidor expone 13 endpoints documentados bajo `/api`.
+Contrato derivado de `server/src/routes/*.js`, `server/src/services/orderService.js`, `lotService.js`, `chatService.js` y `app.js`. El servidor expone 14 endpoints documentados bajo `/api`.
 
 ## Base y autenticación
 
@@ -237,6 +237,23 @@ Body: entre 1 y 30 mensajes; cada `role` es `user` o `assistant`, cada `content`
 `lotId` es opcional y debe ser un entero positivo. Si se envía, la cotización y la orden usan exclusivamente ese lote y su precio; sin `lotId`, se conserva la selección automática del primer lote del molino con stock.
 
 Respuesta cuando crea una cotización: `{ "reply": "...", "order": { "...": "orden serializada" }, "agent": "stub" }`. `agent` puede ser `stub` o `gemini`. Si faltan datos, `order` es `null`.
+
+## Matching
+
+### `POST /api/matching/explain`
+
+Requiere autenticación (cualquier rol). Redacta con Gemini una explicación del resultado del comparador de lotes. La clasificación (`compatible`, `condicional`, `incompatible`) la calcula el motor de reglas del front y Gemini no puede cambiarla.
+
+```json
+{
+  "solicitud": { "variedad": "Largo fino", "tipoArroz": "Blanco", "volumenTn": 40, "quebradoMaxPct": 5, "humedadMaxPct": 14, "paisDestino": "Paraguay", "incoterm": "FOB" },
+  "resultados": [
+    { "loteId": "LOTE-A", "empresa": "Molino Norte", "resultado": "compatible", "coincidencias": ["Variedad Largo fino"], "diferencias": [], "incumplimientos": [] }
+  ]
+}
+```
+
+Respuesta: `{ "explanation": "...", "agent": "gemini" }`. Si `AGENT_MODE` no es `gemini`, falta la configuración, Gemini falla o su respuesta menciona lotes que no se enviaron o precios, devuelve `{ "explanation": null, "agent": "stub" }` y el front usa su plantilla.
 
 ## Estados y eventos
 

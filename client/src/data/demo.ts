@@ -69,6 +69,30 @@ export interface Cotizacion {
   validezDias: number;
   estado: EstadoCotizacion;
   margenPct: number;
+  // Historial de propuestas; la última versión coincide con los términos de arriba.
+  versiones?: VersionCotizacion[];
+}
+
+export type ParteCotizacion = "vendedor" | "comprador";
+
+export interface TerminosCotizacion {
+  cantidadTn: number;
+  precioTnUsd: number;
+  incoterm: string;
+  lugarDesignado: string;
+  validezDias: number;
+  condiciones: string;
+}
+
+export interface VersionCotizacion {
+  numero: number;
+  fecha: string;
+  autor: ParteCotizacion;
+  terminos: TerminosCotizacion;
+  cambios: string[];
+  nota?: string;
+  // Fecha en que cada parte aceptó explícitamente esta versión.
+  aceptaciones?: Partial<Record<ParteCotizacion, string>>;
 }
 
 export interface Operacion {
@@ -97,11 +121,11 @@ export interface DocumentoRequerido {
   categoria: string;
   descripcion: string;
   responsable: string;
-  estado: "Pendiente" | "En preparación" | "Presentado" | "Verificado" | "Observado" | "No aplica";
+  estado: "Pendiente" | "En preparación" | "Presentado" | "Revisado" | "Observado" | "No aplica";
   fechaLimite?: string;
   costoEstimadoUsd?: number;
   fuente: string;
-  ultimaVerificacion?: string;
+  ultimaVerificacion?: string; // fecha de revisión interna, no certificación de terceros
   adjunto?: string;
 }
 
@@ -283,6 +307,24 @@ export const COTIZACIONES_INICIALES: Cotizacion[] = [
     validezDias: 10,
     estado: "En negociación",
     margenPct: 15,
+    versiones: [
+      {
+        numero: 1,
+        fecha: "2026-10-05",
+        autor: "vendedor",
+        terminos: { cantidadTn: 22, precioTnUsd: 1180, incoterm: "CIF", lugarDesignado: "Puerto de Valparaíso, Chile", validezDias: 10, condiciones: "Pago: 50% anticipo, saldo contra documentos." },
+        cambios: ["Propuesta inicial"],
+      },
+      {
+        numero: 2,
+        fecha: "2026-10-07",
+        autor: "comprador",
+        terminos: { cantidadTn: 20, precioTnUsd: 1150, incoterm: "CIF", lugarDesignado: "Puerto de Valparaíso, Chile", validezDias: 10, condiciones: "Pago: 30% anticipo, saldo contra documentos." },
+        cambios: ["Cantidad: 22 tn → 20 tn", "Precio por tonelada: US$ 1.180 → US$ 1.150", "Condiciones: Pago: 50% anticipo, saldo contra documentos. → Pago: 30% anticipo, saldo contra documentos."],
+        nota: "Reducimos volumen para la primera compra y pedimos menor anticipo.",
+        aceptaciones: { comprador: "2026-10-07" },
+      },
+    ],
   },
 ];
 
@@ -301,7 +343,7 @@ export const OPERACIONES_INICIALES: Operacion[] = [
     puertoSalida: "Buenos Aires, Argentina",
     puertoDestino: "San Antonio, Chile",
     permisoEmbarque: "PE-26001-DEMO",
-    estadoDocumental: "Verificado",
+    estadoDocumental: "Revisado",
     estadoLogistico: "Embarque realizado",
     estadoFinanciero: "Cobro recibido",
     hitoActual: 6,
@@ -335,7 +377,7 @@ export const DOCUMENTOS_POR_CATEGORIA: { categoria: string; documentos: Omit<Doc
         nombre: "Factura comercial",
         descripcion: "Documento de venta con datos de las partes, producto, cantidades y valores.",
         responsable: "Vendedor / Exportador",
-        estado: "Verificado",
+        estado: "Revisado",
         fechaLimite: "2026-11-01",
         fuente: "Práctica comercial internacional",
         ultimaVerificacion: "2026-10-12",
@@ -392,7 +434,7 @@ export const DOCUMENTOS_POR_CATEGORIA: { categoria: string; documentos: Omit<Doc
         nombre: "Análisis de calidad",
         descripcion: "Informe de laboratorio: quebrado, humedad, impurezas.",
         responsable: "Laboratorio habilitado",
-        estado: "Verificado",
+        estado: "Revisado",
         costoEstimadoUsd: 90,
         fuente: "Laboratorio privado (demo)",
         ultimaVerificacion: "2026-10-08",
